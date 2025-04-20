@@ -11,6 +11,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
 });
 
+// ✅ הגדרת baseURL של axios מהסביבה
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "לא מזוהה";
   const [events, setEvents] = useState([]);
@@ -19,7 +22,7 @@ export default function Dashboard() {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/events/list');
+      const res = await axios.get('/events/list');
       setEvents(res.data);
     } catch {
       alert('שגיאה בשליפת אירועים');
@@ -60,7 +63,7 @@ export default function Dashboard() {
         address
       };
 
-      await axios.post('http://localhost:8000/events/create', fullEvent);
+      await axios.post('/events/create', fullEvent);
       setNewEvent({ title: '', location: '', reporter: username });
       fetchEvents();
     } catch (err) {
@@ -71,7 +74,7 @@ export default function Dashboard() {
 
   const confirmEvent = async (title) => {
     try {
-      await axios.post(`http://localhost:8000/events/confirm/${title}`);
+      await axios.post(`/events/confirm/${title}`);
       fetchEvents();
     } catch {
       alert("שגיאה באישור האירוע");
@@ -79,7 +82,7 @@ export default function Dashboard() {
   };
 
   const getDistanceFromLatLonInMeters = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // רדיוס כדור הארץ במטרים
+    const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
     const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -90,7 +93,7 @@ export default function Dashboard() {
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-    return R * c; // במטרים
+    return R * c;
   };
 
   useEffect(() => {
@@ -103,21 +106,20 @@ export default function Dashboard() {
             lng: position.coords.longitude
           };
           setUserLocation(coords);
-          sendLiveLocation(coords.lat, coords.lng); // 👈 כאן הקריאה
+          sendLiveLocation(coords.lat, coords.lng);
         },
         error => {
           console.error("שגיאה בקבלת מיקום:", error);
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
       );
-  
+
       return () => navigator.geolocation.clearWatch(watchId);
     }
   }, []);
-  
-  
+
   const sendLiveLocation = (lat, lng) => {
-    axios.post("http://localhost:8000/tracking/update", {
+    axios.post("/tracking/update", {
       username,
       lat,
       lng
@@ -125,7 +127,6 @@ export default function Dashboard() {
       console.error("שגיאה בשליחת מיקום לשרת:", err);
     });
   };
-  
 
   return (
     <div style={{ direction: 'rtl', padding: '2rem' }}>
