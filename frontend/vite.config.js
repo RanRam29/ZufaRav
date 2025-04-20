@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import dotenv from 'dotenv'
+import 'dotenv/config'
+
 
 // טוען משתני סביבה מקובץ .env
 dotenv.config()
