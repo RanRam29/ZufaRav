@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+console.log("Loaded API URL:", import.meta.env.VITE_API_BASE_URL);
 
 export default function Login() {
   const [username, setUsername] = useState('');
