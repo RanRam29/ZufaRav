@@ -15,7 +15,7 @@ export default function Signup() {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8000/auth/register', {
+      const response = await axios.post('https://zufarav.onrender.com', {
         username,
         password,
         rank,
