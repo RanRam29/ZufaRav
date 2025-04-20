@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: zufarav
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
+    disk:
+      name: zufarav-sqlite-disk
+      mountPath: /var/data
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
