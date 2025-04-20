@@ -1,0 +1,12 @@
+
+{
+  "default_region": "מרכז",
+  "minimum_rabbis_required": 2,
+  "event_auto_confirm": false,
+  "send_gps_interval_sec": 15,
+  "push_notifications_enabled": true,
+  "restricted_bounds": {
+    "southwest": [29.45, 34.25],
+    "northeast": [33.30, 35.9]
+  }
+}
