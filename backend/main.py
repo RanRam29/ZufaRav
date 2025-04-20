@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from routes import auth, events, reports, tracking  # כולל tracking אם אתה משתמש בו
 
+
 app = FastAPI()
 
 app.add_middleware(
