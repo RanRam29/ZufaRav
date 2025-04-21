@@ -9,13 +9,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const username = localStorage.getItem("username");
+  const role = localStorage.getItem("role"); // ✅ נוספה בדיקה לפי רול
+
   useEffect(() => {
     fetchEvents();
 
     const interval = setInterval(async () => {
       const res = await axios.get("/events/list");
       const now = new Date();
-      const recent = res.data.filter(event => {
+      const recent = res.data.filter((event) => {
         const created = new Date(event.datetime);
         const diff = (now - created) / (1000 * 60); // דקות
         return diff < 2;
@@ -85,7 +88,6 @@ export default function Dashboard() {
   };
 
   const handleJoinEvent = async (eventId) => {
-    const username = localStorage.getItem("username");
     try {
       await axios.post("/events/join", {
         event_id: eventId,
@@ -149,20 +151,23 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="flex gap-2 mt-2 text-sm">
-                <button
-                  onClick={() => handleDeleteByTitle(event.title)}
-                  className="text-blue-500 underline"
-                >
-                  מחיקה לפי כותרת
-                </button>
-                <button
-                  onClick={() => handleDeleteByReporter(event.reporter)}
-                  className="text-red-500 underline"
-                >
-                  מחיקת כל האירועים של המשתמש
-                </button>
-              </div>
+              {/* כפתורי מחיקה שמוצגים רק לאדמין */}
+              {role === "admin" && (
+                <div className="flex gap-2 mt-2 text-sm">
+                  <button
+                    onClick={() => handleDeleteByTitle(event.title)}
+                    className="text-blue-500 underline"
+                  >
+                    מחיקה לפי כותרת
+                  </button>
+                  <button
+                    onClick={() => handleDeleteByReporter(event.reporter)}
+                    className="text-red-500 underline"
+                  >
+                    מחיקת כל האירועים של המשתמש
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
