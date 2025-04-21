@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import UserMovementDashboard from "./pages/UserMovementDashboard";
+import CreateEvent from "./pages/CreateEvent";
 
 export default function App() {
   const token = localStorage.getItem("token");
@@ -17,6 +18,8 @@ export default function App() {
             path="/dashboard"
             element={token ? <Dashboard /> : <Navigate to="/" replace />}
           />
+          <Route
+           path="/create-event" element={<CreateEvent />} />
           <Route
             path="/movement"
             element={token ? <UserMovementDashboard /> : <Navigate to="/" replace />}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "../axiosInstance";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -11,6 +11,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchEvents();
+
+    const interval = setInterval(async () => {
+      const res = await axios.get("/events/list");
+      const now = new Date();
+      const recent = res.data.filter(event => {
+        const created = new Date(event.datetime);
+        const diff = (now - created) / (1000 * 60); // דקות
+        return diff < 2;
+      });
+      if (recent.length > 0) {
+        alert("📣 אירוע חדש נוצר במערכת!");
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchEvents = async () => {
@@ -69,16 +84,37 @@ export default function Dashboard() {
     }
   };
 
+  const handleJoinEvent = async (eventId) => {
+    const username = localStorage.getItem("username");
+    try {
+      await axios.post("/events/join", {
+        event_id: eventId,
+        username,
+      });
+      alert("אישרת הגעה לאירוע בהצלחה!");
+    } catch {
+      alert("שגיאה באישור הגעה");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
-        <button
-          onClick={() => navigate("/movement")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
-        >
-          מעבר לדשבורד תנועה
-        </button>
+        <div className="flex gap-2">
+          <Link
+            to="/create-event"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
+          >
+            צור אירוע חדש
+          </Link>
+          <button
+            onClick={() => navigate("/movement")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
+          >
+            דשבורד תנועה
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -91,6 +127,7 @@ export default function Dashboard() {
               <p>מיקום: {event.location}</p>
               <p>מדווח: {event.reporter}</p>
               <p>משתתפים: {event.people_count || 0}</p>
+
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => updateCountById(event.id, 1)}
@@ -105,12 +142,13 @@ export default function Dashboard() {
                   -
                 </button>
                 <button
-                  onClick={() => handleDeleteById(event.id)}
-                  className="bg-red-600 text-white px-2 rounded ml-auto"
+                  onClick={() => handleJoinEvent(event.id)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 rounded"
                 >
-                  מחיקה לפי ID
+                  מאשר הגעה
                 </button>
               </div>
+
               <div className="flex gap-2 mt-2 text-sm">
                 <button
                   onClick={() => handleDeleteByTitle(event.title)}
