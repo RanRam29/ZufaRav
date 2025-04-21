@@ -1,9 +1,3 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import UserMovementDashboard from "./pages/UserMovementDashboard";
-
 export default function App() {
   const token = localStorage.getItem("token");
 
@@ -11,7 +5,7 @@ export default function App() {
     <div dir="rtl" className="font-sans">
       <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={token ? <Navigate to="/dashboard" /> : <Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/dashboard"
