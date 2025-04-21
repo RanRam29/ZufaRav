@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from db import get_db
-from auth_utils import require_roles
+from routes.auth_utils import require_roles
+
 
 router = APIRouter(prefix="/events", tags=["events"])
 

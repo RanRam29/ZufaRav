@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from routes import auth, events, reports, tracking  # כולל tracking אם אתה משתמש בו
+from ZufaRav.backend import auth
+from routes import events, reports, tracking  # כולל tracking אם אתה משתמש בו
 
 
 app = FastAPI()

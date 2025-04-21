@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from db import get_db
-from auth_utils import require_roles
+from routes.auth_utils import require_roles
+
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
