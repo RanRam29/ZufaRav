@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from db import get_db
+from auth_utils import require_roles
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -15,9 +16,9 @@ class CreateEvent(BaseModel):
     lat: float = 0.0
     lng: float = 0.0
 
-# ✅ יצירת אירוע
+# ✅ יצירת אירוע - רק admin ו-hamal יכולים
 @router.post("/create")
-def create_event(event: CreateEvent):
+def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal"]))):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -43,7 +44,7 @@ def create_event(event: CreateEvent):
     conn.close()
     return {"msg": "אירוע נוצר בהצלחה"}
 
-# ✅ הצגת רשימת כל האירועים
+# ✅ הצגת רשימת כל האירועים - כולם יכולים
 @router.get("/list")
 def list_events():
     conn = get_db()
@@ -53,9 +54,9 @@ def list_events():
     conn.close()
     return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
-# ✅ אישור אירוע
+# ✅ אישור אירוע - רק admin יכול
 @router.post("/confirm/{title}")
-def confirm_event(title: str):
+def confirm_event(title: str, user=Depends(require_roles(["admin"]))):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE events SET confirmed = 1 WHERE title = ?", (title,))
@@ -63,13 +64,13 @@ def confirm_event(title: str):
     conn.close()
     return {"msg": f"האירוע '{title}' אושר"}
 
-# ✅ הצטרפות לאירוע (מאשר הגעה)
+# ✅ הצטרפות לאירוע (מאשר הגעה) - רק rav ו-admin
 class JoinRequest(BaseModel):
     event_id: int
     username: str
 
 @router.post("/join")
-def join_event(data: JoinRequest):
+def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"]))):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
