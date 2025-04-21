@@ -1,231 +1,126 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
-
-// ✅ הגדרת baseURL של axios מהסביבה
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const username = localStorage.getItem("username") || "לא מזוהה";
   const [events, setEvents] = useState([]);
-  const [newEvent, setNewEvent] = useState({ title: '', location: '', reporter: username });
-  const [userLocation, setUserLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const fetchEvents = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get('/events/list');
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/events/list`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setEvents(res.data);
-    } catch {
-      alert('שגיאה בשליפת אירועים');
-    }
-  };
-
-  const createEvent = async () => {
-    try {
-      const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
-        params: {
-          q: newEvent.location,
-          format: 'json',
-          limit: 1
-        }
-      });
-
-      if (!geoRes.data.length) {
-        alert("כתובת לא נמצאה במפה 😕");
-        return;
-      }
-
-      const { lat, lon } = geoRes.data[0];
-
-      const reverseRes = await axios.get('https://nominatim.openstreetmap.org/reverse', {
-        params: {
-          lat,
-          lon,
-          format: 'json'
-        }
-      });
-
-      const address = reverseRes.data.display_name || "כתובת לא זמינה";
-
-      const fullEvent = {
-        ...newEvent,
-        lat: parseFloat(lat),
-        lng: parseFloat(lon),
-        address
-      };
-
-      await axios.post('/events/create', fullEvent);
-      setNewEvent({ title: '', location: '', reporter: username });
-      fetchEvents();
     } catch (err) {
-      alert('שגיאה ביצירת אירוע');
-      console.error(err);
+      setError("אירעה שגיאה בטעינת האירועים");
     }
-  };
-
-  const confirmEvent = async (title) => {
-    try {
-      await axios.post(`/events/confirm/${title}`);
-      fetchEvents();
-    } catch {
-      alert("שגיאה באישור האירוע");
-    }
-  };
-
-  const getDistanceFromLatLonInMeters = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3;
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c;
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchEvents();
-    if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        position => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setUserLocation(coords);
-          sendLiveLocation(coords.lat, coords.lng);
-        },
-        error => {
-          console.error("שגיאה בקבלת מיקום:", error);
-        },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-      );
-
-      return () => navigator.geolocation.clearWatch(watchId);
-    }
   }, []);
 
-  const sendLiveLocation = (lat, lng) => {
-    axios.post("/tracking/update", {
-      username,
-      lat,
-      lng
-    }).catch(err => {
-      console.error("שגיאה בשליחת מיקום לשרת:", err);
-    });
+  const handleDelete = async (id) => {
+    if (!confirm("האם למחוק את האירוע?")) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/events/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch {
+      alert("שגיאה במחיקה");
+    }
+  };
+
+  const updateCount = async (id, delta) => {
+    const event = events.find((e) => e.id === id);
+    const newCount = Math.max((event.people_count || 0) + delta, 0);
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/events/update_people_count`, {
+        id,
+        new_count: newCount,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setEvents((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, people_count: newCount } : e))
+      );
+    } catch {
+      alert("שגיאה בעדכון כמות");
+    }
   };
 
   return (
-    <div style={{ direction: 'rtl', padding: '2rem' }}>
-      <h2>דשבורד עם מפה חיה</h2>
-      <h4>משתמש מחובר: {username}</h4>
-
-      <div style={{ marginBottom: '2rem' }}>
-        <h4>צור אירוע חדש</h4>
-        <input
-          placeholder="כותרת"
-          value={newEvent.title}
-          onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
-        />
-        <br />
-        <input
-          placeholder="כתובת מדויקת"
-          value={newEvent.location}
-          onChange={e => setNewEvent({ ...newEvent, location: e.target.value })}
-        />
-        <br />
-        <button onClick={createEvent}>צור אירוע</button>
+    <div className="min-h-screen bg-gray-100 p-6 text-right">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
+        <button
+          onClick={() => navigate("/movement")}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
+        >
+          מעבר לדשבורד תנועה
+        </button>
       </div>
 
-      <MapContainer
-        center={[31.8, 35.2]}
-        zoom={8}
-        scrollWheelZoom={false}
-        style={{ height: '400px', width: '100%', marginBottom: '2rem' }}
-        maxBounds={[[29.45, 34.25], [33.3, 35.9]]}
-        maxBoundsViscosity={1.0}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      {loading && <p className="text-center text-gray-600">טוען אירועים...</p>}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-        {userLocation && (
-          <>
-            <Marker position={[userLocation.lat, userLocation.lng]}>
-              <Popup>המיקום שלך</Popup>
-            </Marker>
-            <Circle
-              center={[userLocation.lat, userLocation.lng]}
-              radius={100}
-              pathOptions={{ color: 'blue', fillOpacity: 0.1 }}
-            />
-          </>
-        )}
-
-        {events.map((e, i) => {
-          const distance = userLocation ? getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lng, e.lat, e.lng) : null;
-          const onSite = distance !== null && distance <= 100;
-
-          return e.lat && e.lng && (
-            <Marker key={i} position={[e.lat, e.lng]}>
-              <Popup>
-                <div>
-                  <strong>{e.title}</strong><br />
-                  {e.address || e.location}<br />
-                  מדווח: {e.reporter}<br />
-                  סטטוס: {e.confirmed ? '✅ מאושר' : '⏳ ממתין'}<br />
-                  {userLocation && (
-                    <span>
-                      מרחק: {Math.round(distance)} מטר<br />
-                      {onSite ? "🟢 אתה בזירה" : "🔴 אתה רחוק מהזירה"}
-                    </span>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-      </MapContainer>
-
-      <h4>רשימת אירועים:</h4>
-      {events.map((e, i) => {
-        const distance = userLocation ? getDistanceFromLatLonInMeters(userLocation.lat, userLocation.lng, e.lat, e.lng) : null;
-        const onSite = distance !== null && distance <= 100;
-
-        return (
-          <div key={i} style={{ border: '1px solid gray', padding: '1rem', marginBottom: '1rem' }}>
-            <strong>{e.title}</strong> - {e.address || e.location}
-            <br />
-            מדווח: {e.reporter}
-            <br />
-            סטטוס: {e.confirmed ? '✅ מאושר' : '⏳ ממתין'}
-            <br />
-            {userLocation && (
-              <div>
-                מרחק: {Math.round(distance)} מטר<br />
-                {onSite ? "🟢 אתה בזירה" : "🔴 אתה רחוק מהזירה"}
-              </div>
-            )}
-            {!e.confirmed && (
-              <button onClick={() => confirmEvent(e.title)}>מאשר הגעה</button>
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {events.map((event) => (
+          <div key={event.id} className="bg-white rounded-xl shadow p-4 space-y-2">
+            <h3 className="text-xl font-semibold text-blue-800">{event.title}</h3>
+            <p className="text-sm text-gray-600">{event.location}</p>
+            <p className="text-sm">מדווח: {event.reporter}</p>
+            <p className="text-sm">משתתפים: {event.people_count || 0}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => updateCount(event.id, +1)}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg"
+              >
+                ➕
+              </button>
+              <button
+                onClick={() => updateCount(event.id, -1)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg"
+              >
+                ➖
+              </button>
+              <button
+                onClick={() => handleDelete(event.id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg ml-auto"
+              >
+                מחק
+              </button>
+            </div>
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      <div className="mt-8">
+        <MapContainer center={[31.0461, 34.8516]} zoom={7} style={{ height: "400px", width: "100%" }}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {events.map((event) => (
+            <Marker key={event.id} position={[event.lat, event.lng]}>
+              <Popup>{event.title}</Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
   );
 }

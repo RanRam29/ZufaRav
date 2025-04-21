@@ -1,18 +1,14 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Dashboard from './pages/Dashboard'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import axios from "axios";
+import "./index.css"; // אם יש לך Tailwind
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// הגדרת baseURL ל־axios מכל מקום באפליקציה
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL;
+
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-    </BrowserRouter>
+    <App />
   </React.StrictMode>
-)
+);

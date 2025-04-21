@@ -1,19 +1,29 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Signup from './pages/Signup';
-import Login from './pages/Login';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import UserMovementDashboard from "./pages/UserMovementDashboard";
 
-function App() {
+export default function App() {
+  const token = localStorage.getItem("token");
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} /> {/* התחברות ראשית */}
-        <Route path="/signup" element={<Signup />} /> {/* הרשמה */}
-        <Route path="/dashboard" element={<Dashboard />} /> {/* דשבורד */}
-      </Routes>
-    </Router>
+    <div dir="rtl" className="font-sans">
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/dashboard"
+            element={token ? <Dashboard /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/movement"
+            element={token ? <UserMovementDashboard /> : <Navigate to="/" replace />}
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
-
-export default App;
