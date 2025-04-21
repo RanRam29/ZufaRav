@@ -11,7 +11,8 @@ export default function Signup() {
     id_number: "",
     phone_number: "",
   });
-  const [error, setError] = useState("");
+
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,16 +20,53 @@ export default function Signup() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+
+    // Clear error as user types
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    const phoneRegex = /^(\+?\d{1,2})?\s?-?\d{2,3}-?\d{3}-?\d{4}$/;
+    const idRegex = /^\d{5,9}$/;
+
+    if (!formData.username || formData.username.length < 2) {
+      newErrors.username = "שם משתמש חייב להיות לפחות 2 תווים";
+    }
+
+    if (!formData.password || formData.password.length < 3) {
+      newErrors.password = "סיסמה חייבת להכיל לפחות 3 תווים";
+    }
+
+    if (!formData.rank) {
+      newErrors.rank = "דרגה היא שדה חובה";
+    }
+
+    if (!formData.role) {
+      newErrors.role = "תפקיד הוא שדה חובה";
+    }
+
+    if (!idRegex.test(formData.id_number)) {
+      newErrors.id_number = "מספר אישי חייב להכיל 5 עד 9 ספרות";
+    }
+
+    if (!phoneRegex.test(formData.phone_number)) {
+      newErrors.phone_number = "מספר טלפון לא תקין (למשל 052-1234567)";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    if (!validate()) return;
+
     try {
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/register`, formData);
       navigate("/");
     } catch (err) {
-      setError(err?.response?.data?.detail || "שגיאה בהרשמה");
+      setErrors({ global: err?.response?.data?.detail || "שגיאה בהרשמה" });
     }
   };
 
@@ -53,15 +91,20 @@ export default function Signup() {
                 name={field}
                 value={formData[field]}
                 onChange={handleChange}
-                className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
+                className={`w-full border rounded-xl px-4 py-2 mt-1 text-right ${
+                  errors[field] ? "border-red-500" : ""
+                }`}
                 required
               />
+              {errors[field] && (
+                <p className="text-red-600 text-sm mt-1">{errors[field]}</p>
+              )}
             </div>
           ))}
 
-          {error && (
+          {errors.global && (
             <div className="text-red-600 text-sm bg-red-100 px-3 py-2 rounded-xl text-center">
-              {error}
+              {errors.global}
             </div>
           )}
 
