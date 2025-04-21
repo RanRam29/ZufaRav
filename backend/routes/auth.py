@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from db import get_db
 import jwt
@@ -14,6 +13,8 @@ ALGORITHM = "HS256"
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# --- MODELS ---
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -21,6 +22,12 @@ class RegisterRequest(BaseModel):
     role: str
     id_number: str
     phone_number: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+# --- ROUTES ---
 
 @router.post("/register")
 def register(data: RegisterRequest):
@@ -47,18 +54,25 @@ def register(data: RegisterRequest):
     return {"message": "User registered successfully"}
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
+def login(data: LoginRequest):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (form_data.username,))
+    cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
     row = cursor.fetchone()
     if not row:
         raise HTTPException(status_code=401, detail="User not found")
 
     user = dict(zip([column[0] for column in cursor.description], row))
-    if not bcrypt.checkpw(form_data.password.encode("utf-8"), user["password"]):
+
+    if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     payload = {"sub": user["username"], "role": user["role"]}
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    return {"access_token": token, "token_type": "bearer"}
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "username": user["username"],
+        "role": user["role"]
+    }
