@@ -1,25 +1,30 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from routes import auth, events, reports, tracking  # כולל tracking אם אתה משתמש בו
+
+from routes.auth import router as auth_router
+from routes.events import router as events_router
+from routes.reports import router as reports_router
+from routes.tracking import router as tracking_router
 
 app = FastAPI()
 
+# הגדרות CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # או ["https://zufa-rav.vercel.app/"]
+    allow_origins=["*"],  # אפשר לשים את ה-URL של הפרונטנד בלבד
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ראוט ברירת מחדל
+# בדיקת חיים
 @app.get("/")
 async def root():
     return JSONResponse(content={"status": "✅ ZufaRav backend is running"})
 
-# שאר הראוטים
-app.include_router(auth.router)
-app.include_router(events.router)
-app.include_router(reports.router)
-app.include_router(tracking.router)
+# רישום כל הראוטרים
+app.include_router(auth_router)
+app.include_router(events_router)
+app.include_router(reports_router)
+app.include_router(tracking_router)
