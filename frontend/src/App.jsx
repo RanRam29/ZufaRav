@@ -19,7 +19,9 @@ export default function App() {
             element={token ? <Dashboard /> : <Navigate to="/" replace />}
           />
           <Route
-           path="/create-event" element={<CreateEvent />} />
+            path="/create-event"
+            element={token ? <CreateEvent /> : <Navigate to="/" replace />}
+          />
           <Route
             path="/movement"
             element={token ? <UserMovementDashboard /> : <Navigate to="/" replace />}
