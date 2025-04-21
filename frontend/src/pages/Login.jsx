@@ -2,34 +2,27 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../axiosInstance";
 
-
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!username.trim()) return setError("יש להזין שם משתמש");
-    if (password.length < 3) return setError("סיסמה חייבת להכיל לפחות 3 תווים");
-
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
-        username,
-        password,
-      });
-
-      if (res.data.access_token) {
-        localStorage.setItem("token", res.data.access_token);
-        navigate("/dashboard");
-      } else {
-        setError("התחברות נכשלה: טוקן לא התקבל");
-      }
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, formData);
+      localStorage.setItem("token", response.data.access_token);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.detail || "שגיאה בהתחברות");
+      setError("התחברות נכשלה: טוקן לא התקבל");
     }
   };
 
@@ -38,24 +31,35 @@ export default function Login() {
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-right">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">התחברות למערכת ZufaRav</h2>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600">שם משתמש</label>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-600">
+              שם משתמש
+            </label>
             <input
+              id="username"
+              name="username"
               type="text"
+              autoComplete="username"
+              value={formData.username}
+              onChange={handleChange}
               className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-600">סיסמה</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-600">
+              סיסמה
+            </label>
             <input
+              id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
               className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
