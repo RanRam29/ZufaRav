@@ -37,3 +37,12 @@ def require_roles(allowed_roles: List[str]):
             )
         return user
     return role_checker
+
+# ✅ קיצור דרך: דרישה להיות אדמין בלבד
+def require_admin(user: dict = Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="גישה נדחתה – רק אדמין מורשה"
+        )
+    return user
