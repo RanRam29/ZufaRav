@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-pydantic
-python-jose
-PyJWT
 bcrypt
+fastapi
+pydantic
+PyJWT
+python-dotenv
+python-jose
+uvicorn
