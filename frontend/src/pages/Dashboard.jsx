@@ -1,65 +1,71 @@
 import { useEffect, useState } from "react";
 import axios from "../axiosInstance";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/events/list`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setEvents(res.data);
-    } catch (err) {
-      setError("אירעה שגיאה בטעינת האירועים");
-    }
-    setLoading(false);
-  };
 
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm("האם למחוק את האירוע?")) return;
+  const fetchEvents = async () => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/events/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const res = await axios.get("/events/list");
+      setEvents(res.data);
+    } catch (err) {
+      alert("שגיאה בטעינת האירועים");
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteById = async (id) => {
+    if (!confirm("למחוק אירוע לפי ID?")) return;
+    try {
+      await axios.delete(`/events/delete/by_id/${id}`);
       setEvents((prev) => prev.filter((e) => e.id !== id));
     } catch {
       alert("שגיאה במחיקה");
     }
   };
 
-  const updateCount = async (id, delta) => {
+  const handleDeleteByTitle = async (title) => {
+    if (!confirm("למחוק אירוע לפי כותרת?")) return;
+    try {
+      await axios.delete(`/events/delete/${title}`);
+      setEvents((prev) => prev.filter((e) => e.title !== title));
+    } catch {
+      alert("שגיאה במחיקה");
+    }
+  };
+
+  const updateCountById = async (id, delta) => {
     const event = events.find((e) => e.id === id);
     const newCount = Math.max((event.people_count || 0) + delta, 0);
     try {
-      await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/events/update_people_count`, {
+      await axios.patch(`/events/update_people_count/by_id`, {
         id,
         new_count: newCount,
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
       });
       setEvents((prev) =>
         prev.map((e) => (e.id === id ? { ...e, people_count: newCount } : e))
       );
     } catch {
-      alert("שגיאה בעדכון כמות");
+      alert("שגיאה בעדכון");
+    }
+  };
+
+  const handleDeleteByReporter = async (reporter) => {
+    if (!confirm(`למחוק את כל האירועים של ${reporter}?`)) return;
+    try {
+      await axios.delete(`/events/delete/by_reporter/${reporter}`);
+      setEvents((prev) => prev.filter((e) => e.reporter !== reporter));
+    } catch {
+      alert("שגיאה במחיקת כל האירועים של המשתמש");
     }
   };
 
@@ -75,45 +81,58 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {loading && <p className="text-center text-gray-600">טוען אירועים...</p>}
-      {error && <p className="text-red-500 text-center">{error}</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {events.map((event) => (
-          <div key={event.id} className="bg-white rounded-xl shadow p-4 space-y-2">
-            <h3 className="text-xl font-semibold text-blue-800">{event.title}</h3>
-            <p className="text-sm text-gray-600">{event.location}</p>
-            <p className="text-sm">מדווח: {event.reporter}</p>
-            <p className="text-sm">משתתפים: {event.people_count || 0}</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => updateCount(event.id, +1)}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg"
-              >
-                ➕
-              </button>
-              <button
-                onClick={() => updateCount(event.id, -1)}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg"
-              >
-                ➖
-              </button>
-              <button
-                onClick={() => handleDelete(event.id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg ml-auto"
-              >
-                מחק
-              </button>
+      {loading ? (
+        <p>טוען אירועים...</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {events.map((event) => (
+            <div key={event.id} className="bg-white p-4 rounded-xl shadow">
+              <h3 className="text-xl font-bold text-blue-800">{event.title}</h3>
+              <p>מיקום: {event.location}</p>
+              <p>מדווח: {event.reporter}</p>
+              <p>משתתפים: {event.people_count || 0}</p>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => updateCountById(event.id, 1)}
+                  className="bg-green-600 text-white px-2 rounded"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => updateCountById(event.id, -1)}
+                  className="bg-yellow-500 text-white px-2 rounded"
+                >
+                  -
+                </button>
+                <button
+                  onClick={() => handleDeleteById(event.id)}
+                  className="bg-red-600 text-white px-2 rounded ml-auto"
+                >
+                  מחיקה לפי ID
+                </button>
+              </div>
+              <div className="flex gap-2 mt-2 text-sm">
+                <button
+                  onClick={() => handleDeleteByTitle(event.title)}
+                  className="text-blue-500 underline"
+                >
+                  מחיקה לפי כותרת
+                </button>
+                <button
+                  onClick={() => handleDeleteByReporter(event.reporter)}
+                  className="text-red-500 underline"
+                >
+                  מחיקת כל האירועים של המשתמש
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-8">
-        <MapContainer center={[31.0461, 34.8516]} zoom={7} style={{ height: "400px", width: "100%" }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+        <MapContainer center={[31.0461, 34.8516]} zoom={7} style={{ height: "400px" }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {events.map((event) => (
             <Marker key={event.id} position={[event.lat, event.lng]}>
               <Popup>{event.title}</Popup>
