@@ -17,12 +17,27 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, formData);
-      localStorage.setItem("token", response.data.access_token);
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        formData
+      );
+
+      const { access_token, username, role } = response.data;
+
+      if (!access_token) {
+        throw new Error("אין טוקן בתגובה");
+      }
+
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("username", username);
+      localStorage.setItem("role", role);
+
       navigate("/dashboard");
     } catch (err) {
-      setError("התחברות נכשלה: טוקן לא התקבל");
+      console.error(err);
+      setError("התחברות נכשלה: אנא בדוק את שם המשתמש והסיסמה");
     }
   };
 
