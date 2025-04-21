@@ -64,7 +64,8 @@ def login(data: LoginRequest):
 
     user = dict(zip([column[0] for column in cursor.description], row))
 
-    if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"]):
+    # ✅ תיקון כאן
+    if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     payload = {"sub": user["username"], "role": user["role"]}
