@@ -1,7 +1,8 @@
-bcrypt
 fastapi
+uvicorn
 pydantic
 PyJWT
 python-dotenv
+bcrypt
 python-jose
-uvicorn
+python-multipart
