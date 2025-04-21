@@ -7,7 +7,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # או ["https://zufarav.vercel.app"]
+    allow_origins=["*"],  # או ["https://zufa-rav.vercel.app/"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
