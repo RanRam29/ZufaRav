@@ -1,5 +1,7 @@
 import { useState } from "react";
 import axios from "../axiosInstance";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateEvent({ onCreate }) {
   const [event, setEvent] = useState({
@@ -7,8 +9,6 @@ export default function CreateEvent({ onCreate }) {
     location: "",
     severity: "LOW",
     people_count: 1,
-    date: "",
-    time: "",
   });
 
   const handleChange = (e) => {
@@ -20,7 +20,12 @@ export default function CreateEvent({ onCreate }) {
     e.preventDefault();
 
     const reporter = localStorage.getItem("username");
-    const timestamp = new Date(`${event.date}T${event.time}`).toISOString();
+    const timestamp = new Date().toISOString();
+
+    if (!event.title || !event.location || !reporter) {
+      toast.error("יש למלא את כל השדות הנדרשים");
+      return;
+    }
 
     try {
       await axios.post("/events/create", {
@@ -29,25 +34,72 @@ export default function CreateEvent({ onCreate }) {
         datetime: timestamp,
       });
 
-      onCreate(); // עדכון רשימת האירועים
+      toast.success("✅ האירוע נוצר בהצלחה!");
+      if (onCreate) onCreate();
+
+      setEvent({
+        title: "",
+        location: "",
+        severity: "LOW",
+        people_count: 1,
+      });
     } catch (err) {
-      alert("שגיאה ביצירת אירוע");
+      console.error("שגיאה ביצירת אירוע:", err);
+      toast.error("❌ שגיאה בעת יצירת האירוע");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-4 rounded-xl shadow-md">
-      <input name="title" placeholder="כותרת" className="input" onChange={handleChange} required />
-      <input name="location" placeholder="כתובת האירוע" className="input" onChange={handleChange} required />
-      <select name="severity" className="input" onChange={handleChange} required>
-        <option value="LOW">נמוכה</option>
-        <option value="MEDIUM">בינונית</option>
-        <option value="HIGH">גבוהה</option>
-      </select>
-      <input type="number" name="people_count" min="1" max="99" placeholder="כמות רבנים נדרשת" className="input" onChange={handleChange} required />
-      <input type="date" name="date" className="input" onChange={handleChange} required />
-      <input type="time" name="time" className="input" onChange={handleChange} required />
-      <button type="submit" className="btn">צור אירוע</button>
-    </form>
+    <div className="space-y-4 bg-white p-4 rounded-xl shadow-md">
+      <ToastContainer position="top-center" />
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          name="title"
+          placeholder="כותרת"
+          className="input"
+          value={event.title}
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          name="location"
+          placeholder="כתובת האירוע"
+          className="input"
+          value={event.location}
+          onChange={handleChange}
+          required
+        />
+
+        <select
+          name="severity"
+          className="input"
+          value={event.severity}
+          onChange={handleChange}
+          required
+        >
+          <option value="LOW">נמוכה</option>
+          <option value="MEDIUM">בינונית</option>
+          <option value="HIGH">גבוהה</option>
+        </select>
+
+        <input
+          type="number"
+          name="people_count"
+          min="1"
+          max="99"
+          placeholder="כמות רבנים נדרשת"
+          className="input"
+          value={event.people_count}
+          onChange={handleChange}
+          required
+        />
+
+        <button type="submit" className="btn w-full bg-green-600 hover:bg-green-700 text-white">
+          צור אירוע
+        </button>
+      </form>
+    </div>
   );
 }

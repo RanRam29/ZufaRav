@@ -6,3 +6,12 @@
 body {
   @apply bg-gray-100 text-gray-800 font-sans;
 }
+
+/* רכיבים מותאמים אישית */
+.input {
+  @apply w-full border rounded-xl px-4 py-2 text-right bg-white text-gray-800;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-xl font-bold transition duration-200;
+}
