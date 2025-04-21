@@ -1,28 +1,49 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from db import get_db
 
 router = APIRouter(prefix="/events", tags=["events"])
 
-class Event(BaseModel):
+# ✅ מחלקת יצירת אירוע
+class CreateEvent(BaseModel):
     title: str
     location: str
     reporter: str
-    lat: float
-    lng: float
+    severity: str = "LOW"
+    people_required: int = 1
+    datetime: str  # תאריך + שעה בפורמט ISO
+    lat: float = 0.0
+    lng: float = 0.0
 
+# ✅ יצירת אירוע
 @router.post("/create")
-def create_event(event: Event):
+def create_event(event: CreateEvent):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO events (title, location, reporter, confirmed, lat, lng, people_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (event.title, event.location, event.reporter, 0, event.lat, event.lng, 0))
+        INSERT INTO events (
+            title, location, reporter,
+            severity, people_required, datetime,
+            confirmed, lat, lng, people_count
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        event.title,
+        event.location,
+        event.reporter,
+        event.severity,
+        event.people_required,
+        event.datetime,
+        0,               # confirmed
+        event.lat,
+        event.lng,
+        0                # people_count
+    ))
     conn.commit()
     conn.close()
     return {"msg": "אירוע נוצר בהצלחה"}
 
+# ✅ הצגת רשימת כל האירועים
 @router.get("/list")
 def list_events():
     conn = get_db()
@@ -32,6 +53,7 @@ def list_events():
     conn.close()
     return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
 
+# ✅ אישור אירוע
 @router.post("/confirm/{title}")
 def confirm_event(title: str):
     conn = get_db()
@@ -41,59 +63,19 @@ def confirm_event(title: str):
     conn.close()
     return {"msg": f"האירוע '{title}' אושר"}
 
-# === עדכון משתתפים לפי title ===
-class UpdatePeople(BaseModel):
-    title: str
-    new_count: int
+# ✅ הצטרפות לאירוע (מאשר הגעה)
+class JoinRequest(BaseModel):
+    event_id: int
+    username: str
 
-@router.patch("/update_people_count")
-def update_people_count(data: UpdatePeople):
+@router.post("/join")
+def join_event(data: JoinRequest):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE events SET people_count = ? WHERE title = ?", (data.new_count, data.title))
+    cursor.execute("""
+        INSERT OR IGNORE INTO event_participants (event_id, username)
+        VALUES (?, ?)
+    """, (data.event_id, data.username))
     conn.commit()
     conn.close()
-    return {"msg": f"הכמות עודכנה ל־{data.new_count}"}
-
-# === עדכון משתתפים לפי ID ===
-class UpdatePeopleByID(BaseModel):
-    id: int
-    new_count: int
-
-@router.patch("/update_people_count/by_id")
-def update_people_count_by_id(data: UpdatePeopleByID):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE events SET people_count = ? WHERE id = ?", (data.new_count, data.id))
-    conn.commit()
-    conn.close()
-    return {"msg": f"הכמות עודכנה לאירוע {data.id} ל־{data.new_count}"}
-
-# === מחיקות ===
-
-@router.delete("/delete/{title}")
-def delete_event(title: str):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM events WHERE title = ?", (title,))
-    conn.commit()
-    conn.close()
-    return {"msg": f"האירוע '{title}' נמחק"}
-
-@router.delete("/delete/by_id/{event_id}")
-def delete_event_by_id(event_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM events WHERE id = ?", (event_id,))
-    conn.commit()
-    conn.close()
-    return {"msg": f"האירוע ID {event_id} נמחק"}
-
-@router.delete("/delete/by_reporter/{reporter}")
-def delete_by_reporter(reporter: str):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM events WHERE reporter = ?", (reporter,))
-    conn.commit()
-    conn.close()
-    return {"msg": f"כל האירועים של המדווח '{reporter}' נמחקו"}
+    return {"msg": f"{data.username} נוסף לאירוע {data.event_id}"}
