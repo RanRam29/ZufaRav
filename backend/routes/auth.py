@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from db import get_db
@@ -47,7 +47,7 @@ def register(data: RegisterRequest):
     return {"message": "User registered successfully"}
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = ...):
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE username = ?", (form_data.username,))
