@@ -1,3 +1,9 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import UserMovementDashboard from "./pages/UserMovementDashboard";
+
 export default function App() {
   const token = localStorage.getItem("token");
 
