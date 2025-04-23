@@ -1,13 +1,22 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import UserMovementDashboard from "./pages/UserMovementDashboard";
 import CreateEvent from "./pages/CreateEvent";
-import EventAuditDashboard from "./pages/EventAuditDashboard"; // ✅ הוספת הקומפוננטה החדשה
+import EventAuditDashboard from "./pages/EventAuditDashboard";
 
 export default function App() {
-  const token = localStorage.getItem("token");
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem("token"));
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   return (
     <div dir="rtl" className="font-sans">

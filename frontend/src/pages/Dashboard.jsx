@@ -8,6 +8,9 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import "leaflet/dist/leaflet.css";
 
+const confirmSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3");
+const notifySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.wav");
+
 // ✅ תיקון Leaflet למחט קלאסית
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -16,10 +19,20 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+function formatMinutesSince(dateString) {
+  const created = new Date(dateString);
+  const now = new Date();
+  const diff = Math.floor((now - created) / 60000);
+  if (diff < 1) return "פחות מדקה";
+  if (diff === 1) return "דקה אחת";
+  return `${diff} דקות`;
+}
+
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterConfirmed, setFilterConfirmed] = useState("all");
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
@@ -42,6 +55,7 @@ export default function Dashboard() {
         return diff < 2;
       });
       if (recent.length > 0) {
+        notifySound.play();
         alert("📣 אירוע חדש נוצר במערכת!");
       }
     }, 10000);
@@ -60,8 +74,35 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("role");
+    setShowLogoutPopup(true);
+    setTimeout(() => {
+      setShowLogoutPopup(false);
+      navigate("/login", { replace: true });
+    }, 1500);
+  };
+
+  const handleJoinEvent = async (title) => {
+    try {
+      await axios.post(`/events/confirm/${title}`);
+      confirmSound.play();
+      fetchEvents();
+    } catch (err) {
+      alert("שגיאה באישור ההגעה");
+    }
+  };
+
+  const handleDeleteById = async (id) => {
+    const confirmed = window.confirm("האם אתה בטוח שברצונך למחוק את האירוע? פעולה זו אינה הפיכה.");
+    if (!confirmed) return;
+    try {
+      await axios.delete(`/events/delete/by_id/${id}`);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch {
+      alert("שגיאה במחיקה");
+    }
   };
 
   const filteredEvents = events.filter((event) => {
@@ -71,20 +112,27 @@ export default function Dashboard() {
     return true;
   });
 
-  const severityColor = (severity) => {
-    switch (severity) {
-      case "HIGH":
-        return "text-red-600";
-      case "MEDIUM":
-        return "text-yellow-600";
-      case "LOW":
-      default:
-        return "text-green-600";
-    }
+  const severityColor = (event) => {
+    const severity = event.severity;
+    const createdTime = new Date(event.datetime);
+    const now = new Date();
+    const minutesAgo = Math.floor((now - createdTime) / 60000);
+    const distance = event.distance || 0;
+
+    if (distance <= 100) return "text-green-700 font-bold";
+    if (minutesAgo < 5) return severity === "HIGH" ? "text-red-600 animate-pulse" : "text-yellow-600";
+    if (minutesAgo < 15) return "text-orange-600";
+    return "text-gray-500";
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
+      {showLogoutPopup && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg border px-6 py-2 rounded-xl z-50 animate-fade">
+          ✅ נותקת מהמערכת
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
@@ -142,53 +190,31 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white p-4 rounded-xl shadow">
-              <h3 className={`text-xl font-bold ${severityColor(event.severity)}`}>
+            <div key={event.id} className="bg-white p-4 rounded-xl shadow transition-transform duration-300 hover:scale-105">
+              <h3 className={`text-xl font-bold ${severityColor(event)}`}>
                 {event.title}
               </h3>
               <p>מיקום: {event.location}</p>
               <p>מדווח: {event.reporter}</p>
               <p>רמת חומרה: {event.severity}</p>
               <p>סטטוס: {event.confirmed ? "✅ מאושר" : "⏳ בהמתנה"}</p>
+              <p>בהמתנה: {formatMinutesSince(event.datetime)}</p>
               <p>משתתפים: {event.people_count || 0}</p>
 
               <div className="flex gap-2 mt-2">
                 <button
-                  onClick={() => updateCountById(event.id, 1)}
-                  className="bg-green-600 text-white px-2 rounded"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => updateCountById(event.id, -1)}
-                  className="bg-yellow-500 text-white px-2 rounded"
-                >
-                  -
-                </button>
-                <button
-                  onClick={() => handleJoinEvent(event.id)}
+                  onClick={() => handleJoinEvent(event.title)}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-2 rounded"
                 >
                   מאשר הגעה
                 </button>
+                <button
+                  onClick={() => handleDeleteById(event.id)}
+                  className="bg-red-500 text-white px-2 rounded"
+                >
+                  מחק
+                </button>
               </div>
-
-              {role === "admin" && (
-                <div className="flex gap-2 mt-2 text-sm">
-                  <button
-                    onClick={() => handleDeleteByTitle(event.title)}
-                    className="text-blue-500 underline"
-                  >
-                    מחיקה לפי כותרת
-                  </button>
-                  <button
-                    onClick={() => handleDeleteByReporter(event.reporter)}
-                    className="text-red-500 underline"
-                  >
-                    מחיקת כל האירועים של המשתמש
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
