@@ -2,22 +2,32 @@ import { useEffect, useState } from "react";
 import axios from "../axiosInstance";
 import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import "leaflet/dist/leaflet.css";
+
+// ✅ תיקון Leaflet למחט קלאסית
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterConfirmed, setFilterConfirmed] = useState("all");
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
 
-  // ✅ הפניה אם לא מחובר
   useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    }
+    if (!token) navigate("/login");
   }, [token]);
 
   useEffect(() => {
@@ -28,7 +38,7 @@ export default function Dashboard() {
       const now = new Date();
       const recent = res.data.filter((event) => {
         const created = new Date(event.datetime);
-        const diff = (now - created) / (1000 * 60); // דקות
+        const diff = (now - created) / (1000 * 60);
         return diff < 2;
       });
       if (recent.length > 0) {
@@ -43,75 +53,46 @@ export default function Dashboard() {
     try {
       const res = await axios.get("/events/list");
       setEvents(res.data);
-    } catch (err) {
+    } catch {
       alert("שגיאה בטעינת האירועים");
     }
     setLoading(false);
   };
 
-  const handleDeleteById = async (id) => {
-    if (!confirm("למחוק אירוע לפי ID?")) return;
-    try {
-      await axios.delete(`/events/delete/by_id/${id}`);
-      setEvents((prev) => prev.filter((e) => e.id !== id));
-    } catch {
-      alert("שגיאה במחיקה");
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
   };
 
-  const handleDeleteByTitle = async (title) => {
-    if (!confirm("למחוק אירוע לפי כותרת?")) return;
-    try {
-      await axios.delete(`/events/delete/${title}`);
-      setEvents((prev) => prev.filter((e) => e.title !== title));
-    } catch {
-      alert("שגיאה במחיקה");
-    }
-  };
+  const filteredEvents = events.filter((event) => {
+    if (filterConfirmed === "all") return true;
+    if (filterConfirmed === "confirmed") return event.confirmed;
+    if (filterConfirmed === "pending") return !event.confirmed;
+    return true;
+  });
 
-  const updateCountById = async (id, delta) => {
-    const event = events.find((e) => e.id === id);
-    const newCount = Math.max((event.people_count || 0) + delta, 0);
-    try {
-      await axios.patch(`/events/update_people_count/by_id`, {
-        id,
-        new_count: newCount,
-      });
-      setEvents((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, people_count: newCount } : e))
-      );
-    } catch {
-      alert("שגיאה בעדכון");
-    }
-  };
-
-  const handleDeleteByReporter = async (reporter) => {
-    if (!confirm(`למחוק את כל האירועים של ${reporter}?`)) return;
-    try {
-      await axios.delete(`/events/delete/by_reporter/${reporter}`);
-      setEvents((prev) => prev.filter((e) => e.reporter !== reporter));
-    } catch {
-      alert("שגיאה במחיקת כל האירועים של המשתמש");
-    }
-  };
-
-  const handleJoinEvent = async (eventId) => {
-    try {
-      await axios.post("/events/join", {
-        event_id: eventId,
-        username,
-      });
-      alert("אישרת הגעה לאירוע בהצלחה!");
-    } catch {
-      alert("שגיאה באישור הגעה");
+  const severityColor = (severity) => {
+    switch (severity) {
+      case "HIGH":
+        return "text-red-600";
+      case "MEDIUM":
+        return "text-yellow-600";
+      case "LOW":
+      default:
+        return "text-green-600";
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
-        <div className="flex gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
+          <p className="text-sm text-gray-600">
+            משתמש: <b>{username}</b> | תפקיד: <b>{role}</b>
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
           {(role === "admin" || role === "hamal") && (
             <Link
               to="/create-event"
@@ -126,18 +107,49 @@ export default function Dashboard() {
           >
             דשבורד תנועה
           </button>
+          <button
+            onClick={handleLogout}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl"
+          >
+            התנתק
+          </button>
         </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => setFilterConfirmed("all")}
+          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded"
+        >
+          הצג הכל
+        </button>
+        <button
+          onClick={() => setFilterConfirmed("confirmed")}
+          className="bg-green-300 hover:bg-green-400 text-gray-800 px-3 py-1 rounded"
+        >
+          מאושרים
+        </button>
+        <button
+          onClick={() => setFilterConfirmed("pending")}
+          className="bg-yellow-300 hover:bg-yellow-400 text-gray-800 px-3 py-1 rounded"
+        >
+          בהמתנה
+        </button>
       </div>
 
       {loading ? (
         <p>טוען אירועים...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <div key={event.id} className="bg-white p-4 rounded-xl shadow">
-              <h3 className="text-xl font-bold text-blue-800">{event.title}</h3>
+              <h3 className={`text-xl font-bold ${severityColor(event.severity)}`}>
+                {event.title}
+              </h3>
               <p>מיקום: {event.location}</p>
               <p>מדווח: {event.reporter}</p>
+              <p>רמת חומרה: {event.severity}</p>
+              <p>סטטוס: {event.confirmed ? "✅ מאושר" : "⏳ בהמתנה"}</p>
               <p>משתתפים: {event.people_count || 0}</p>
 
               <div className="flex gap-2 mt-2">
@@ -161,7 +173,6 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* כפתורי מחיקה שמוצגים רק לאדמין */}
               {role === "admin" && (
                 <div className="flex gap-2 mt-2 text-sm">
                   <button
