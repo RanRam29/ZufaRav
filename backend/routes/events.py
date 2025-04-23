@@ -29,30 +29,36 @@ class UpdatePeopleCount(BaseModel):
 
 @router.post("/create")
 def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal"]))):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO events (
-            title, location, reporter,
-            severity, people_required, datetime,
-            confirmed, lat, lng, people_count
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        event.title,
-        event.location,
-        event.reporter,
-        event.severity,
-        event.people_required,
-        event.datetime,
-        0,
-        event.lat,
-        event.lng,
-        0
-    ))
-    conn.commit()
-    conn.close()
-    return {"msg": "אירוע נוצר בהצלחה"}
+    print("🔧 CREATE EVENT:", event.dict())
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO events (
+                title, location, reporter,
+                severity, people_required, datetime,
+                confirmed, lat, lng, people_count
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            event.title,
+            event.location,
+            event.reporter,
+            event.severity,
+            event.people_required,
+            event.datetime,
+            0,
+            event.lat,
+            event.lng,
+            0
+        ))
+        conn.commit()
+        return {"msg": "אירוע נוצר בהצלחה"}
+    except Exception as e:
+        print("❌ CREATE EVENT ERROR:", e)
+        raise HTTPException(status_code=500, detail="שגיאה ביצירת אירוע")
+    finally:
+        conn.close()
 
 @router.get("/list")
 def list_events():
@@ -65,6 +71,7 @@ def list_events():
 
 @router.post("/confirm/{title}")
 def confirm_event(title: str, user=Depends(require_roles(["admin"]))):
+    print(f"🟢 CONFIRM EVENT: {title}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE events SET confirmed = 1 WHERE title = ?", (title,))
@@ -74,6 +81,7 @@ def confirm_event(title: str, user=Depends(require_roles(["admin"]))):
 
 @router.post("/join")
 def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"]))):
+    print(f"👤 JOIN EVENT: {data.username} -> {data.event_id}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -84,9 +92,9 @@ def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"])))
     conn.close()
     return {"msg": f"{data.username} נוסף לאירוע {data.event_id}"}
 
-# ✅ PATCH - עדכון מספר משתתפים לפי ID
 @router.patch("/update_people_count/by_id")
 def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["admin", "hamal"]))):
+    print(f"🔁 UPDATE COUNT: event_id={data.id}, count={data.new_count}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE events SET people_count = ? WHERE id = ?", (data.new_count, data.id))
@@ -96,9 +104,9 @@ def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["ad
     conn.close()
     return {"msg": f"עודכנו {data.new_count} משתתפים לאירוע {data.id}"}
 
-# ✅ DELETE - לפי ID
 @router.delete("/delete/by_id/{id}")
 def delete_event_by_id(id: int, user=Depends(require_roles(["admin"]))):
+    print(f"🗑 DELETE BY ID: {id}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM events WHERE id = ?", (id,))
@@ -108,9 +116,9 @@ def delete_event_by_id(id: int, user=Depends(require_roles(["admin"]))):
     conn.close()
     return {"msg": f"אירוע {id} נמחק"}
 
-# ✅ DELETE - לפי כותרת
 @router.delete("/delete/{title}")
 def delete_event_by_title(title: str, user=Depends(require_roles(["admin"]))):
+    print(f"🗑 DELETE BY TITLE: {title}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM events WHERE title = ?", (title,))
@@ -120,9 +128,9 @@ def delete_event_by_title(title: str, user=Depends(require_roles(["admin"]))):
     conn.close()
     return {"msg": f"אירוע '{title}' נמחק"}
 
-# ✅ DELETE - לפי מדווח
 @router.delete("/delete/by_reporter/{reporter}")
 def delete_by_reporter(reporter: str, user=Depends(require_roles(["admin"]))):
+    print(f"🗑 DELETE BY REPORTER: {reporter}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM events WHERE reporter = ?", (reporter,))

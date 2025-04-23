@@ -31,55 +31,75 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 def register(data: RegisterRequest):
-    conn = get_db()
-    cursor = conn.cursor()
+    print(">>> REGISTER REQUEST:", data.dict())  # 🔍 תיעוד בקונסול
 
-    cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
-    if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="Username already exists")
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
-    # ✅ הצפנת הסיסמה
-    hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Username already exists")
 
-    cursor.execute(
-        """
-        INSERT INTO users (username, password, rank, role, id_number, phone_number)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            data.username,
-            hashed_password,
-            data.rank,
-            data.role,
-            data.id_number,
-            data.phone_number,
-        ),
-    )
-    conn.commit()
-    return {"message": "User registered successfully"}
+        hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        cursor.execute(
+            """
+            INSERT INTO users (username, password, rank, role, id_number, phone_number)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                data.username,
+                hashed_password,
+                data.rank,
+                data.role,
+                data.id_number,
+                data.phone_number,
+            ),
+        )
+
+        conn.commit()
+        print("✅ User saved to DB")
+
+        return {"message": "User registered successfully"}
+
+    except Exception as e:
+        print("❌ REGISTER ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Internal registration error")
+
+    finally:
+        conn.close()
+
 
 @router.post("/login")
 def login(data: LoginRequest):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=401, detail="User not found")
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
-    user = dict(zip([column[0] for column in cursor.description], row))
+        cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="User not found")
 
-    # ✅ השוואת סיסמה
-    if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        user = dict(zip([column[0] for column in cursor.description], row))
 
-    # ✅ יצירת טוקן
-    payload = {"sub": user["username"], "role": user["role"]}
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "username": user["username"],
-        "role": user["role"]
-    }
+        payload = {"sub": user["username"], "role": user["role"]}
+        token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "username": user["username"],
+            "role": user["role"]
+        }
+
+    except Exception as e:
+        print("❌ LOGIN ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Internal login error")
+
+    finally:
+        conn.close()
