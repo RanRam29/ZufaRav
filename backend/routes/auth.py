@@ -31,8 +31,7 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 def register(data: RegisterRequest):
-    print(">>> REGISTER REQUEST:", data.dict())  # 🔍 תיעוד בקונסול
-
+    print(">>> REGISTER REQUEST:", data.dict())
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -79,10 +78,12 @@ def login(data: LoginRequest):
 
         cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
         row = cursor.fetchone()
+
         if not row:
             raise HTTPException(status_code=401, detail="User not found")
 
-        user = dict(zip([column[0] for column in cursor.description], row))
+        columns = [column[0] for column in cursor.description]
+        user = dict(zip(columns, row))
 
         if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
             raise HTTPException(status_code=401, detail="Invalid credentials")
