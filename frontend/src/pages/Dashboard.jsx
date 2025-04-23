@@ -92,7 +92,11 @@ export default function Dashboard() {
     const interval = setInterval(async () => {
       const res = await axios.get("/events/list");
       const now = new Date();
-      const recent = res.data.filter(e => (now - new Date(e.datetime)) / 60000 < 2);
+      const recent = res.data.filter(e => {
+  const created = new Date(e.datetime);
+  const diff = (now - created) / 60000;
+  return diff < 2 && !e.confirmed;
+});
       if (recent.length) {
         notifySound.play();
         alert("📣 אירוע חדש נוצר במערכת!");
@@ -151,6 +155,10 @@ export default function Dashboard() {
             <Link to="/create-event" className="bg-green-600 text-white px-4 py-2 rounded-xl">צור אירוע חדש</Link>
           )}
           <button onClick={() => navigate("/movement")} className="bg-blue-600 text-white px-4 py-2 rounded-xl">דשבורד תנועה</button>
+          
+          <button onClick={() => navigate("/reports")} className="bg-gray-700 text-white px-4 py-2 rounded-xl">
+            ארכיון
+          </button>
           <button onClick={handleLogout} className="bg-gray-500 text-white px-4 py-2 rounded-xl">התנתק</button>
         </div>
       </div>

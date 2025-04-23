@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import UserMovementDashboard from "./pages/UserMovementDashboard";
 import CreateEvent from "./pages/CreateEvent";
 import EventAuditDashboard from "./pages/EventAuditDashboard";
+import ArchivedEvents from "./pages/ArchivedEvents"; // ✅ חדש
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -39,6 +40,10 @@ export default function App() {
           <Route
             path="/audit"
             element={token ? <EventAuditDashboard /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/reports"
+            element={token ? <ArchivedEvents /> : <Navigate to="/" replace />} // ✅ חדש
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
