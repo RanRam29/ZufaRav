@@ -10,6 +10,8 @@ export default function Signup() {
     role: "",
     id_number: "",
     phone_number: "",
+    full_name: "",
+    email: "",
   });
 
   const [error, setError] = useState("");
@@ -39,99 +41,14 @@ export default function Signup() {
         <h2 className="text-3xl font-bold mb-6 text-gray-800">הרשמה למערכת ZufaRav</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-600">
-              שם משתמש
-            </label>
-            <input
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-600">
-              סיסמה
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="rank" className="block text-sm font-medium text-gray-600">
-              דרגה
-            </label>
-            <input
-              id="rank"
-              name="rank"
-              type="text"
-              value={formData.rank}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-600">
-              תפקיד
-            </label>
-            <input
-              id="role"
-              name="role"
-              type="text"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="id_number" className="block text-sm font-medium text-gray-600">
-              מספר אישי
-            </label>
-            <input
-              id="id_number"
-              name="id_number"
-              type="text"
-              autoComplete="off"
-              value={formData.id_number}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone_number" className="block text-sm font-medium text-gray-600">
-              מספר טלפון
-            </label>
-            <input
-              id="phone_number"
-              name="phone_number"
-              type="tel"
-              autoComplete="tel"
-              value={formData.phone_number}
-              onChange={handleChange}
-              className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
-              required
-            />
-          </div>
+          <Input label="שם משתמש" name="username" value={formData.username} onChange={handleChange} required />
+          <Input label="סיסמה" name="password" type="password" value={formData.password} onChange={handleChange} required />
+          <Input label="דרגה" name="rank" value={formData.rank} onChange={handleChange} required />
+          <Input label="תפקיד" name="role" value={formData.role} onChange={handleChange} required />
+          <Input label="מספר אישי" name="id_number" value={formData.id_number} onChange={handleChange} required />
+          <Input label="מספר טלפון" name="phone_number" value={formData.phone_number} onChange={handleChange} required />
+          <Input label="שם מלא" name="full_name" value={formData.full_name} onChange={handleChange} />
+          <Input label="אימייל" name="email" type="email" value={formData.email} onChange={handleChange} />
 
           {error && (
             <div className="text-red-600 text-sm bg-red-100 px-3 py-2 rounded-xl text-center">
@@ -154,6 +71,26 @@ export default function Signup() {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function Input({ label, name, type = "text", value, onChange, required = false }) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-gray-600">
+        {label}
+      </label>
+      <input
+        id={name}
+        name={name}
+        type={type}
+        autoComplete={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full border rounded-xl px-4 py-2 mt-1 text-right"
+      />
     </div>
   );
 }
