@@ -36,7 +36,7 @@ def register(data: RegisterRequest):
         conn = get_db()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
+        cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Username already exists")
 
@@ -45,7 +45,7 @@ def register(data: RegisterRequest):
         cursor.execute(
             """
             INSERT INTO users (username, password, rank, role, id_number, phone_number)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """,
             (
                 data.username,
@@ -69,20 +69,19 @@ def register(data: RegisterRequest):
     finally:
         conn.close()
 
-
 @router.post("/login")
 def login(data: LoginRequest):
     try:
         conn = get_db()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE username = ?", (data.username,))
+        cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         row = cursor.fetchone()
 
         if not row:
             raise HTTPException(status_code=401, detail="User not found")
 
-        columns = [column[0] for column in cursor.description]
+        columns = [desc[0] for desc in cursor.description]
         user = dict(zip(columns, row))
 
         if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):

@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from db import get_db
 from routes.auth_utils import require_roles
 
-
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/summary")
@@ -24,6 +23,7 @@ def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"])
     """)
     join_count = cursor.fetchone()[0]
 
+    cursor.close()
     conn.close()
 
     return {

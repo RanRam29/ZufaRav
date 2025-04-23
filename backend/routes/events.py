@@ -40,7 +40,7 @@ def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal
                 severity, people_required, datetime,
                 confirmed, lat, lng, people_count
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             event.title,
             event.location,
@@ -48,7 +48,7 @@ def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal
             event.severity,
             event.people_required,
             event.datetime,
-            0,
+            False,
             event.lat,
             event.lng,
             0
@@ -67,8 +67,10 @@ def list_events():
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM events")
     rows = cursor.fetchall()
+    result = [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
+    cursor.close()
     conn.close()
-    return [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
+    return result
 
 @router.post("/confirm/{title}")
 def confirm_event(title: str, request: Request, user=Depends(require_roles(["admin"]))):
@@ -78,10 +80,11 @@ def confirm_event(title: str, request: Request, user=Depends(require_roles(["adm
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        UPDATE events SET confirmed = 1, confirmed_by = ?, confirmed_at = ?
-        WHERE title = ?
-    """, (username, confirmed_at, title))
+        UPDATE events SET confirmed = %s, confirmed_by = %s, confirmed_at = %s
+        WHERE title = %s
+    """, (True, username, confirmed_at, title))
     conn.commit()
+    cursor.close()
     conn.close()
     return {"msg": f"האירוע '{title}' אושר על ידי {username}"}
 
@@ -90,11 +93,14 @@ def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"])))
     print(f"👤 JOIN EVENT: {data.username} -> {data.event_id}")
     conn = get_db()
     cursor = conn.cursor()
+    # עליך לוודא שיש constraint ייחודי על event_id + username בטבלה הזו
     cursor.execute("""
-        INSERT OR IGNORE INTO event_participants (event_id, username)
-        VALUES (?, ?)
+        INSERT INTO event_participants (event_id, username)
+        VALUES (%s, %s)
+        ON CONFLICT DO NOTHING
     """, (data.event_id, data.username))
     conn.commit()
+    cursor.close()
     conn.close()
     return {"msg": f"{data.username} נוסף לאירוע {data.event_id}"}
 
@@ -103,10 +109,11 @@ def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["ad
     print(f"🔁 UPDATE COUNT: event_id={data.id}, count={data.new_count}")
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE events SET people_count = ? WHERE id = ?", (data.new_count, data.id))
+    cursor.execute("UPDATE events SET people_count = %s WHERE id = %s", (data.new_count, data.id))
     if cursor.rowcount == 0:
         raise HTTPException(status_code=404, detail="אירוע לא נמצא")
     conn.commit()
+    cursor.close()
     conn.close()
     return {"msg": f"עודכנו {data.new_count} משתתפים לאירוע {data.id}"}
 
@@ -118,7 +125,7 @@ def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["a
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM events WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM events WHERE id = %s", (id,))
     original = cursor.fetchone()
 
     if not original:
@@ -126,7 +133,7 @@ def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["a
 
     cursor.execute("""
         SELECT timestamp FROM tracking
-        WHERE username = ? ORDER BY timestamp DESC LIMIT 1
+        WHERE username = %s ORDER BY timestamp DESC LIMIT 1
     """, (original[3],))
     tracking = cursor.fetchone()
     arrival_time = tracking[0] if tracking else None
@@ -137,7 +144,7 @@ def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["a
             confirmed, confirmed_by, confirmed_at, arrival_time,
             deleted_by, deleted_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, (
         original[0], original[1], original[2], original[3],
         original[4], original[5], original[6], original[7],
@@ -145,8 +152,9 @@ def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["a
         deleted_by, deleted_at
     ))
 
-    cursor.execute("DELETE FROM events WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM events WHERE id = %s", (id,))
     conn.commit()
+    cursor.close()
     conn.close()
     return {"msg": f"אירוע {id} נמחק והועבר לארכיון"}
 
@@ -161,6 +169,7 @@ def get_archived_events(user=Depends(require_roles(["admin", "hamal"]))):
         ORDER BY deleted_at DESC
     """)
     rows = cursor.fetchall()
+    cursor.close()
     conn.close()
 
     return [

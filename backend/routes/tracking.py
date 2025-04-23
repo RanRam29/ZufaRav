@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from db import get_db
 from routes.auth_utils import require_roles
 
-
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 class LocationUpdate(BaseModel):
@@ -18,8 +17,9 @@ def update_location(data: LocationUpdate, user=Depends(require_roles(["admin", "
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO tracking (username, lat, lng, timestamp)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
     """, (data.username, data.lat, data.lng, data.timestamp))
     conn.commit()
+    cursor.close()
     conn.close()
     return {"msg": "מיקום עודכן בהצלחה"}

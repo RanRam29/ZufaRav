@@ -1,12 +1,15 @@
-import sqlite3
+from dotenv import load_dotenv
+import psycopg2
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "tzukrav.db")
+# טען את הקובץ ממיקום ידני
+load_dotenv(dotenv_path=".env")
 
 def get_db():
-    return sqlite3.connect(DB_PATH)
-
-
-
-
+    return psycopg2.connect(
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST"),
+        port=os.getenv("POSTGRES_PORT", 5432)
+    )

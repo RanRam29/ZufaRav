@@ -1,56 +1,62 @@
 import requests
-from datetime import datetime
-import random
 
-API = "https://zufarav.onrender.com"  # שנה לפי הצורך אם אתה מריץ ב-Render
+API_BASE = "https://zufarav.onrender.com"
 
-username = f"testuser{random.randint(1000,9999)}"
-password = "12345678"
+headers = {
+    "Content-Type": "application/json",
+    "X-User": "admin1"
+}
 
-def register_user():
-    data = {
-        "username": username,
-        "password": password,
-        "rank": "טוראי",
-        "role": "admin",  # או hamal/rav
-        "id_number": f"{random.randint(100000000, 999999999)}",
-        "phone_number": f"05{random.randint(00000000,99999999)}"
-    }
-    res = requests.post(f"{API}/auth/register", json=data)
-    print("✅ Register:", res.status_code, res.text)
-
-def login_user():
-    res = requests.post(f"{API}/auth/login", json={
-        "username": username,
-        "password": password
-    })
-    print("✅ Login:", res.status_code)
-    return res.json()["access_token"]
-
-def create_event(token):
-    headers = {"Authorization": f"Bearer {token}"}
-    data = {
-        "title": "בדיקת אירוע",
+def test_create_event():
+    print("🚀 Creating event...")
+    response = requests.post(f"{API_BASE}/events/create", json={
+        "title": "בדיקת מערכת",
         "location": "תל אביב",
-        "reporter": username,
+        "reporter": "admin1",
         "severity": "HIGH",
-        "people_required": 3,
-        "datetime": datetime.utcnow().isoformat(),
+        "people_required": 2,
+        "datetime": "2025-04-23T10:00:00",
         "lat": 32.0853,
         "lng": 34.7818
-    }
-    res = requests.post(f"{API}/events/create", json=data, headers=headers)
-    print("✅ Create Event:", res.status_code, res.text)
+    }, headers=headers)
+    print(response.json())
 
-def list_events():
-    res = requests.get(f"{API}/events/list")
-    print("📄 All Events:")
-    for e in res.json():
-        print("-", e["title"], "by", e["reporter"], "| Confirmed:", e["confirmed"])
+def test_list_events():
+    print("📋 Listing events...")
+    response = requests.get(f"{API_BASE}/events/list")
+    events = response.json()
+    print(events)
+    return events
+
+def test_confirm_event(title):
+    print(f"✅ Confirming event: {title}")
+    response = requests.post(f"{API_BASE}/events/confirm/{title}", headers=headers)
+    print(response.json())
+
+def test_join_event(event_id):
+    print(f"👥 Joining event {event_id}...")
+    response = requests.post(f"{API_BASE}/events/join", json={
+        "event_id": event_id,
+        "username": "rav1"
+    }, headers=headers)
+    print(response.json())
+
+def test_delete_event_by_id(event_id):
+    print(f"🗑 Deleting event {event_id}...")
+    response = requests.delete(f"{API_BASE}/events/delete/by_id/{event_id}", headers=headers)
+    print(response.json())
+
+def test_get_archive():
+    print("📦 Getting archive...")
+    response = requests.get(f"{API_BASE}/events/archive", headers=headers)
+    print(response.json())
 
 if __name__ == "__main__":
-    print("📦 Starting test flow...")
-    register_user()
-    token = login_user()
-    create_event(token)
-    list_events()
+    test_create_event()
+    events = test_list_events()
+    if events:
+        event = events[-1]
+        test_confirm_event(event["title"])
+        test_join_event(event["id"])
+        test_delete_event_by_id(event["id"])
+        test_get_archive()
