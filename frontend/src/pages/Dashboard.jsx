@@ -9,8 +9,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
   const username = localStorage.getItem("username");
-  const role = localStorage.getItem("role"); // ✅ נוספה בדיקה לפי רול
+  const role = localStorage.getItem("role");
+
+  // ✅ הפניה אם לא מחובר
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token]);
 
   useEffect(() => {
     fetchEvents();
@@ -104,12 +112,14 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
         <div className="flex gap-2">
-          <Link
-            to="/create-event"
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
-          >
-            צור אירוע חדש
-          </Link>
+          {(role === "admin" || role === "hamal") && (
+            <Link
+              to="/create-event"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
+            >
+              צור אירוע חדש
+            </Link>
+          )}
           <button
             onClick={() => navigate("/movement")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"

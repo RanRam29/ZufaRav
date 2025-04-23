@@ -26,17 +26,20 @@ export default function Login() {
 
       const { access_token, username, role } = response.data;
 
-      if (!access_token) {
-        throw new Error("אין טוקן בתגובה");
+      if (!access_token || !role) {
+        throw new Error("התגובה לא תקינה");
       }
 
+      // ✅ שמירה
       localStorage.setItem("token", access_token);
       localStorage.setItem("username", username);
       localStorage.setItem("role", role);
 
-      navigate("/dashboard");
+      // ✅ ניווט לדשבורד
+      navigate("/dashboard", { replace: true });
+
     } catch (err) {
-      console.error(err);
+      console.error("Login failed:", err);
       setError("התחברות נכשלה: אנא בדוק את שם המשתמש והסיסמה");
     }
   };
