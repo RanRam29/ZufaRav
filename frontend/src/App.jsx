@@ -4,6 +4,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import UserMovementDashboard from "./pages/UserMovementDashboard";
 import CreateEvent from "./pages/CreateEvent";
+import EventAuditDashboard from "./pages/EventAuditDashboard"; // ✅ הוספת הקומפוננטה החדשה
 
 export default function App() {
   const token = localStorage.getItem("token");
@@ -25,6 +26,10 @@ export default function App() {
           <Route
             path="/movement"
             element={token ? <UserMovementDashboard /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/audit"
+            element={token ? <EventAuditDashboard /> : <Navigate to="/" replace />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
