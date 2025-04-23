@@ -1,9 +1,12 @@
 import sqlite3
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "tzukrav.db")
+
 def get_db():
-    db_path = "tzukrav.db"
-    if not os.path.exists(db_path):
-        # צור קובץ DB ריק אם לא קיים (ימנע קריסה)
-        open(db_path, 'w').close()
-    return sqlite3.connect(db_path)
+    return sqlite3.connect(DB_PATH)
+
+
+
+
