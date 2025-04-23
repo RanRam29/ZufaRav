@@ -11,7 +11,6 @@ import "leaflet/dist/leaflet.css";
 const confirmSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3");
 const notifySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.wav");
 
-// ✅ תיקון Leaflet למחט קלאסית
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
@@ -22,14 +21,22 @@ L.Icon.Default.mergeOptions({
 function formatMinutesSince(dateString) {
   const created = new Date(dateString);
   const now = new Date();
-  const diff = Math.floor((now - created) / 60000);
-  if (diff < 1) return "פחות מדקה";
-  if (diff === 1) return "דקה אחת";
-  return `${diff} דקות`;
+  const diffInMinutes = Math.floor((now - created) / 60000);
+
+  if (diffInMinutes < 1) return "פחות מדקה";
+  if (diffInMinutes === 1) return "דקה אחת";
+  if (diffInMinutes < 60) return `${diffInMinutes} דקות`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} שעות`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} ימים`;
 }
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterConfirmed, setFilterConfirmed] = useState("all");
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
@@ -45,6 +52,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchEvents();
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("שגיאה בקבלת מיקום המשתמש", error);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
 
     const interval = setInterval(async () => {
       const res = await axios.get("/events/list");
@@ -105,24 +127,32 @@ export default function Dashboard() {
     }
   };
 
-  const filteredEvents = events.filter((event) => {
-    if (filterConfirmed === "all") return true;
-    if (filterConfirmed === "confirmed") return event.confirmed;
-    if (filterConfirmed === "pending") return !event.confirmed;
-    return true;
-  });
+  const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   const severityColor = (event) => {
-    const severity = event.severity;
     const createdTime = new Date(event.datetime);
     const now = new Date();
     const minutesAgo = Math.floor((now - createdTime) / 60000);
+    const hoursAgo = Math.floor(minutesAgo / 60);
+    const daysAgo = Math.floor(hoursAgo / 24);
     const distance = event.distance || 0;
 
-    if (distance <= 100) return "text-green-700 font-bold";
-    if (minutesAgo < 5) return severity === "HIGH" ? "text-red-600 animate-pulse" : "text-yellow-600";
-    if (minutesAgo < 15) return "text-orange-600";
-    return "text-gray-500";
+    if (distance <= 100) return "bg-green-100 border-green-500 text-green-700";
+    if (daysAgo >= 1) return "bg-gray-200 border-gray-500 text-gray-700";
+    if (hoursAgo >= 1) return "bg-yellow-200 border-yellow-500 text-yellow-700";
+    if (minutesAgo >= 15) return "bg-orange-200 border-orange-500 text-orange-700";
+    if (minutesAgo >= 5) return "bg-red-200 border-red-500 text-red-700 animate-pulse";
+    return "bg-white border-gray-300 text-gray-900";
   };
 
   return (
@@ -133,102 +163,43 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
-          <p className="text-sm text-gray-600">
-            משתמש: <b>{username}</b> | תפקיד: <b>{role}</b>
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {(role === "admin" || role === "hamal") && (
-            <Link
-              to="/create-event"
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
-            >
-              צור אירוע חדש
-            </Link>
-          )}
-          <button
-            onClick={() => navigate("/movement")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
-          >
-            דשבורד תנועה
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl"
-          >
-            התנתק
-          </button>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2 mb-4">
-        <button
-          onClick={() => setFilterConfirmed("all")}
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded"
-        >
-          הצג הכל
-        </button>
-        <button
-          onClick={() => setFilterConfirmed("confirmed")}
-          className="bg-green-300 hover:bg-green-400 text-gray-800 px-3 py-1 rounded"
-        >
-          מאושרים
-        </button>
-        <button
-          onClick={() => setFilterConfirmed("pending")}
-          className="bg-yellow-300 hover:bg-yellow-400 text-gray-800 px-3 py-1 rounded"
-        >
-          בהמתנה
-        </button>
-      </div>
-
-      {loading ? (
-        <p>טוען אירועים...</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white p-4 rounded-xl shadow transition-transform duration-300 hover:scale-105">
-              <h3 className={`text-xl font-bold ${severityColor(event)}`}>
-                {event.title}
-              </h3>
-              <p>מיקום: {event.location}</p>
-              <p>מדווח: {event.reporter}</p>
-              <p>רמת חומרה: {event.severity}</p>
-              <p>סטטוס: {event.confirmed ? "✅ מאושר" : "⏳ בהמתנה"}</p>
-              <p>בהמתנה: {formatMinutesSince(event.datetime)}</p>
-              <p>משתתפים: {event.people_count || 0}</p>
-
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => handleJoinEvent(event.title)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 rounded"
-                >
-                  מאשר הגעה
-                </button>
-                <button
-                  onClick={() => handleDeleteById(event.id)}
-                  className="bg-red-500 text-white px-2 rounded"
-                >
-                  מחק
-                </button>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {events.map((event) => (
+          <div key={event.id} className={`p-4 rounded-xl shadow ${severityColor(event)}`}>
+            <h3 className="text-xl font-bold">{event.title}</h3>
+            <p>מדווח: {event.reporter}</p>
+            <p>סטטוס: {event.confirmed ? "✅ מאושר" : "⏳ בהמתנה"}</p>
+            <p>בהמתנה: {formatMinutesSince(event.datetime)}</p>
+            <p>משתתפים: {event.people_count || 0}</p>
+            {userLocation && event.lat && event.lng && (() => {
+              const dist = getDistanceFromLatLonInKm(
+                userLocation.lat,
+                userLocation.lng,
+                event.lat,
+                event.lng
+              );
+              const icon = "📍";
+              let color = "text-red-600";
+              if (dist < 0.5) color = "text-green-700";
+              else if (dist < 2) color = "text-orange-600";
+              return (
+                <p className={color}>
+                  {dist < 1
+                    ? `${icon} מרחק: ${Math.round(dist * 1000)} מטר`
+                    : `${icon} מרחק: ${dist.toFixed(2)} ק"מ`}
+                </p>
+              );
+            })()}
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => handleJoinEvent(event.title)} className="bg-purple-600 hover:bg-purple-700 text-white px-2 rounded">
+                מאשר הגעה
+              </button>
+              <button onClick={() => handleDeleteById(event.id)} className="bg-red-500 text-white px-2 rounded">
+                מחק
+              </button>
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-8">
-        <MapContainer center={[31.0461, 34.8516]} zoom={7} style={{ height: "400px" }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {events.map((event) => (
-            <Marker key={event.id} position={[event.lat, event.lng]}>
-              <Popup>{event.title}</Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+          </div>
+        ))}
       </div>
     </div>
   );
