@@ -38,9 +38,14 @@ def register(data: RegisterRequest):
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt())
+    # ✅ הצפנת הסיסמה
+    hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
     cursor.execute(
-        "INSERT INTO users (username, password, rank, role, id_number, phone_number) VALUES (?, ?, ?, ?, ?, ?)",
+        """
+        INSERT INTO users (username, password, rank, role, id_number, phone_number)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
         (
             data.username,
             hashed_password,
@@ -64,10 +69,11 @@ def login(data: LoginRequest):
 
     user = dict(zip([column[0] for column in cursor.description], row))
 
-    # ✅ תיקון כאן
+    # ✅ השוואת סיסמה
     if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    # ✅ יצירת טוקן
     payload = {"sub": user["username"], "role": user["role"]}
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
