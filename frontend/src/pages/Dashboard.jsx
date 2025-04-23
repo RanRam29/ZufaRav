@@ -155,11 +155,8 @@ export default function Dashboard() {
             <Link to="/create-event" className="bg-green-600 text-white px-4 py-2 rounded-xl">צור אירוע חדש</Link>
           )}
           <button onClick={() => navigate("/movement")} className="bg-blue-600 text-white px-4 py-2 rounded-xl">דשבורד תנועה</button>
-          
-          <button onClick={() => navigate("/reports")} className="bg-gray-700 text-white px-4 py-2 rounded-xl">
-            ארכיון
-          </button>
           <button onClick={handleLogout} className="bg-gray-500 text-white px-4 py-2 rounded-xl">התנתק</button>
+                  <button onClick={() => navigate("/reports")} className="bg-gray-700 text-white px-4 py-2 rounded-xl">ארכיון</button>
         </div>
       </div>
 
