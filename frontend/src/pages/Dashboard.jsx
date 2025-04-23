@@ -157,6 +157,57 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">דשבורד אירועים</h1>
+          <p className="text-sm text-gray-600">
+            משתמש: <b>{username}</b> | תפקיד: <b>{role}</b>
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {(role === "admin" || role === "hamal") && (
+            <Link
+              to="/create-event"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
+            >
+              צור אירוע חדש
+            </Link>
+          )}
+          <button
+            onClick={() => navigate("/movement")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
+          >
+            דשבורד תנועה
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl"
+          >
+            התנתק
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => setFilterConfirmed("all")}
+          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded"
+        >
+          הצג הכל
+        </button>
+        <button
+          onClick={() => setFilterConfirmed("confirmed")}
+          className="bg-green-300 hover:bg-green-400 text-gray-800 px-3 py-1 rounded"
+        >
+          מאושרים
+        </button>
+        <button
+          onClick={() => setFilterConfirmed("pending")}
+          className="bg-yellow-300 hover:bg-yellow-400 text-gray-800 px-3 py-1 rounded"
+        >
+          בהמתנה
+        </button>
+      </div>
       {showLogoutPopup && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg border px-6 py-2 rounded-xl z-50 animate-fade">
           ✅ נותקת מהמערכת
