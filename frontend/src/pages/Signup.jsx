@@ -47,8 +47,8 @@ export default function Signup() {
           <Input label="תפקיד" name="role" value={formData.role} onChange={handleChange} required />
           <Input label="מספר אישי" name="id_number" value={formData.id_number} onChange={handleChange} required />
           <Input label="מספר טלפון" name="phone_number" value={formData.phone_number} onChange={handleChange} required />
-          <Input label="שם מלא" name="full_name" value={formData.full_name} onChange={handleChange} />
-          <Input label="אימייל" name="email" type="email" value={formData.email} onChange={handleChange} />
+          <Input label="שם מלא" name="full_name" value={formData.full_name} onChange={handleChange} required />
+          <Input label="אימייל" name="email" type="email" value={formData.email} onChange={handleChange} required />
 
           {error && (
             <div className="text-red-600 text-sm bg-red-100 px-3 py-2 rounded-xl text-center">
