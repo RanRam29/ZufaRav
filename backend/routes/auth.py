@@ -36,6 +36,7 @@ def register(data: RegisterRequest):
     print(">>> REGISTER REQUEST:", data.dict())
     try:
         conn = get_db()
+        print("📡 CONNECTED TO:", conn.dsn)  # <<< ✅ כאן תראה בדיוק לאן אתה ניגש
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
@@ -72,6 +73,7 @@ def register(data: RegisterRequest):
 
     finally:
         conn.close()
+
 
 @router.post("/login")
 def login(data: LoginRequest):
