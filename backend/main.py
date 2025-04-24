@@ -12,7 +12,7 @@ app = FastAPI()
 
 # 🎯 הגדרות CORS מדויקות - ללא `/` בסוף ה-origin
 origins = [
-    "https://zufa-8pixzv5rj-ranrams-projects.vercel.app",  # ✅ ללא `/` בסוף
+    "https://zufa-rav.vercel.app",  # ✅ ללא `/` בסוף
     "http://localhost:5173",
 ]
 
