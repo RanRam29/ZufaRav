@@ -22,6 +22,8 @@ class RegisterRequest(BaseModel):
     role: str
     id_number: str
     phone_number: str
+    full_name: str = ""
+    email: str = ""
 
 class LoginRequest(BaseModel):
     username: str
@@ -44,8 +46,8 @@ def register(data: RegisterRequest):
 
         cursor.execute(
             """
-            INSERT INTO users (username, password, rank, role, id_number, phone_number)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO users (username, password, rank, role, id_number, phone_number, full_name, email)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 data.username,
@@ -54,6 +56,8 @@ def register(data: RegisterRequest):
                 data.role,
                 data.id_number,
                 data.phone_number,
+                data.full_name,
+                data.email
             ),
         )
 
