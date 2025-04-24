@@ -3,9 +3,21 @@ services:
     name: zufarav
     env: python
     plan: free
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
-    rootDir: backend
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: POSTGRES_DB
+        value: zufarav
+      - key: POSTGRES_USER
+        value: admin
+      - key: POSTGRES_PASSWORD
+        value: cB719EqWBFYMdLxplNcsRSvNQs1cqaL7
+      - key: POSTGRES_HOST
+        value: dpg-d04d39a4d50c73a2gssg-a
+      - key: POSTGRES_PORT
+        value: "5432"
+      - key: FRONTEND_ORIGIN
+        value: https://zufa-8pixzv5rj-ranrams-projects.vercel.app
