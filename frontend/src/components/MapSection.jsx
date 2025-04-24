@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 
-export default function MapSection({ userLocation, events }) {
+export default function MapSection({ userLocation, events, newEventIds }) {
   return (
     <MapContainer center={[31.8, 35.2]} zoom={8} scrollWheelZoom={false} style={{ height: '400px', width: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -21,6 +21,11 @@ export default function MapSection({ userLocation, events }) {
               מדווח: {e.reporter}<br />
               סטטוס: {e.confirmed ? '✅' : '⏳'}
             </Popup>
+            {newEventIds.includes(e.id) && (
+              <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg animate-bounce">
+                חדש!
+              </div>
+            )}
           </Marker>
         )
       ))}

@@ -6,6 +6,8 @@ import FilterBar from '../components/FilterBar';
 import LogoutPopup from '../components/LogoutPopup';
 import EventsGrid from '../components/EventsGrid';
 import MapSection from '../components/MapSection';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const confirmSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3");
 const notifySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.wav");
@@ -31,10 +33,14 @@ export default function Dashboard() {
 
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      if (msg.type === "new_event") {
+      if (msg.type === "new_event" && !notifiedEvents.current.has(msg.data.id)) {
+        notifiedEvents.current.add(msg.data.id);
         notifySound.play();
-        alert(`📣 אירוע חדש: ${msg.data.title}`);
-        fetchEvents();
+        toast.info(`📣 אירוע חדש: ${msg.data.title}`, {
+          position: "bottom-right",
+          autoClose: 5000,
+        });
+        setEvents((prev) => [...prev, msg.data]);
       }
     };
 
@@ -158,6 +164,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
+      <ToastContainer />
       <TopBar username={username} role={role} navigate={navigate} handleLogout={handleLogout} />
       <FilterBar setFilterConfirmed={setFilterConfirmed} />
       <LogoutPopup show={showLogoutPopup} />
