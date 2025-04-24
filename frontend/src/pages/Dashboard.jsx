@@ -27,7 +27,8 @@ export default function Dashboard() {
   const username = localStorage.getItem("username");
   const role = localStorage.getItem("role");
 
-  useEffect(() => {
+  
+useEffect(() => {
   let lastSentCoords = null;
 
   const watchId = navigator.geolocation?.watchPosition(
@@ -43,7 +44,7 @@ export default function Dashboard() {
         axios.post("/tracking/update", {
           username,
           ...coords,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     },
@@ -51,15 +52,14 @@ export default function Dashboard() {
     { enableHighAccuracy: true }
   );
 
-  const interval = setInterval(() => {
-    fetchEvents();
-  }, 10000);
+  const interval = setInterval(fetchEvents, 10000);
 
   return () => {
     navigator.geolocation.clearWatch(watchId);
     clearInterval(interval);
   };
 }, []);
+
 
   const handleLogout = () => {
     localStorage.clear();

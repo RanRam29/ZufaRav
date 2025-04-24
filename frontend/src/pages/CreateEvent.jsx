@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import axios from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateEvent({ onCreate }) {
@@ -10,6 +12,8 @@ export default function CreateEvent({ onCreate }) {
     severity: "LOW",
     people_count: 1,
   });
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,14 +39,10 @@ export default function CreateEvent({ onCreate }) {
       });
 
       toast.success("✅ האירוע נוצר בהצלחה!");
-      if (onCreate) onCreate();
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
 
-      setEvent({
-        title: "",
-        location: "",
-        severity: "LOW",
-        people_count: 1,
-      });
     } catch (err) {
       console.error("שגיאה ביצירת אירוע:", err);
       toast.error("❌ שגיאה בעת יצירת האירוע");
