@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from '../axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [filterConfirmed, setFilterConfirmed] = useState("all");
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const navigate = useNavigate();
+  const notifiedEvents = useRef(new Set());
 
   const token = localStorage.getItem("token");
   const username = localStorage.getItem("username");
@@ -72,9 +73,11 @@ export default function Dashboard() {
       const recent = res.data.filter(e => {
         const created = new Date(e.datetime);
         const diff = (now - created) / 60000;
-        return diff < 2 && !e.confirmed;
+        return diff < 2 && !e.confirmed && !notifiedEvents.current.has(e.title);
       });
+
       if (recent.length) {
+        recent.forEach(e => notifiedEvents.current.add(e.title));
         notifySound.play();
         alert("📣 אירוע חדש נוצר במערכת!");
       }
