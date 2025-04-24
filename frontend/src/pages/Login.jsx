@@ -1,11 +1,10 @@
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "../axiosInstance";
 
 export default function Login() {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -35,8 +34,8 @@ export default function Login() {
       localStorage.setItem("username", username);
       localStorage.setItem("role", role);
 
-      // ✅ ניווט לדשבורד
-      navigate("/dashboard", { replace: true });
+      // ✅ רידיירקט מלא שיבטיח טעינה תקינה של ה-Dashboard
+      window.location.href = "/dashboard";
 
     } catch (err) {
       console.error("Login failed:", err);
