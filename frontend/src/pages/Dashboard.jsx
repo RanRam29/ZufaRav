@@ -26,6 +26,21 @@ export default function Dashboard() {
     if (!token) window.location.href = "/login";
   }, [token]);
 
+  useEffect(() => {
+    const socket = new WebSocket("wss://zufarav.onrender.com/ws/events");
+
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "new_event") {
+        notifySound.play();
+        alert(`📣 אירוע חדש: ${msg.data.title}`);
+        fetchEvents();
+      }
+    };
+
+    return () => socket.close();
+  }, []);
+
   const getDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
@@ -68,19 +83,6 @@ export default function Dashboard() {
     try {
       const res = await axios.get("/events/list");
       setEvents(res.data);
-
-      const now = new Date();
-      const recent = res.data.filter(e => {
-        const created = new Date(e.datetime);
-        const diff = (now - created) / 60000;
-        return diff < 2 && !e.confirmed && !notifiedEvents.current.has(e.title);
-      });
-
-      if (recent.length) {
-        recent.forEach(e => notifiedEvents.current.add(e.title));
-        notifySound.play();
-        alert("📣 אירוע חדש נוצר במערכת!");
-      }
     } catch {
       alert("שגיאה בטעינת האירועים");
     }
