@@ -1,17 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import axios from '../axiosInstance';
-import { useNavigate, Link } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
-import L from 'leaflet';
-import "leaflet/dist/leaflet.css";
-
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-});
+import { useNavigate } from 'react-router-dom';
+import TopBar from '../components/TopBar';
+import FilterBar from '../components/FilterBar';
+import LogoutPopup from '../components/LogoutPopup';
+import EventsGrid from '../components/EventsGrid';
+import MapSection from '../components/MapSection';
 
 const confirmSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3");
 const notifySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.wav");
@@ -28,9 +22,7 @@ export default function Dashboard() {
   const role = localStorage.getItem("role");
 
   useEffect(() => {
-    if (!token) {
-      window.location.href = "/login";
-    }
+    if (!token) window.location.href = "/login";
   }, [token]);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -161,7 +153,20 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 text-right">
-      {/* ... שמירת שאר הקוד כמו שיש לך כולל MapContainer וכל UI */}
+      <TopBar username={username} role={role} navigate={navigate} handleLogout={handleLogout} />
+      <FilterBar setFilterConfirmed={setFilterConfirmed} />
+      <LogoutPopup show={showLogoutPopup} />
+      <EventsGrid
+        events={filteredEvents}
+        userLocation={userLocation}
+        getDistance={getDistance}
+        getTextColorByDistance={getTextColorByDistance}
+        getBackgroundClass={getBackgroundClass}
+        getTimeLabel={getTimeLabel}
+        confirmEvent={confirmEvent}
+        deleteEvent={deleteEvent}
+      />
+      <MapSection userLocation={userLocation} events={events} />
     </div>
   );
 }
