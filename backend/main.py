@@ -10,10 +10,10 @@ from routes.admin_routes import router as admin_router  # אופציונלי
 
 app = FastAPI()
 
-# 🎯 הגדרות CORS מדויקות - מאפשרות גישה רק מה-Frontend
+# 🎯 הגדרות CORS מדויקות - ללא `/` בסוף ה-origin
 origins = [
-    "https://zufa-8oyxxslz4-ranram29s-projects.vercel.app",  # Frontend שלך ב־Vercel
-    "http://localhost:5173",  # פיתוח מקומי
+    "https://zufa-8pixzv5rj-ranrams-projects.vercel.app",  # ✅ ללא `/` בסוף
+    "http://localhost:5173",
 ]
 
 app.add_middleware(
@@ -29,9 +29,9 @@ app.add_middleware(
 async def root():
     return JSONResponse(content={"status": "✅ ZufaRav backend is running"})
 
-# 🔗 חיבור כל הראוטים
+# 🔗 ראוטים
 app.include_router(auth_router)
 app.include_router(events_router)
 app.include_router(reports_router)
 app.include_router(tracking_router)
-app.include_router(admin_router)  # אם יש קובץ admin_routes
+app.include_router(admin_router)
