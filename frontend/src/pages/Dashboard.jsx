@@ -9,14 +9,15 @@ import MapSection from '../components/MapSection';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const confirmSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3");
-const notifySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-alert-bells-echo-765.wav");
+const confirmSound = new Audio("/notification.mp3");
+const notifySound = new Audio("/notification.mp3");
 
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [filterConfirmed, setFilterConfirmed] = useState("all");
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [newEventIds, setNewEventIds] = useState([]);  // חדש - לשמור מזהי אירועים חדשים
   const navigate = useNavigate();
   const notifiedEvents = useRef(new Set());
 
@@ -35,11 +36,29 @@ export default function Dashboard() {
       const msg = JSON.parse(event.data);
       if (msg.type === "new_event" && !notifiedEvents.current.has(msg.data.id)) {
         notifiedEvents.current.add(msg.data.id);
-        notifySound.play();
+        // עדכון רשימת האירועים החדשים
+        setNewEventIds((prev) => [...prev, msg.data.id]);
+
+        // ניגון הצליל
+        notifySound.play().catch((err) => {
+          console.error("Error playing notification sound:", err);
+        });
+
+        // נוטיפיקציה לדפדפן
+        if (Notification.permission === "granted") {
+          new Notification("📢 אירוע חדש", {
+            body: msg.data.title,
+            icon: "/favicon.ico", // תוכל להחליף לאייקון שלך אם יש
+          });
+        }
+
+        // הצגת Toast
         toast.info(`📣 אירוע חדש: ${msg.data.title}`, {
           position: "bottom-right",
           autoClose: 5000,
         });
+
+        // עדכון האירועים
         setEvents((prev) => [...prev, msg.data]);
       }
     };
@@ -177,8 +196,9 @@ export default function Dashboard() {
         getTimeLabel={getTimeLabel}
         confirmEvent={confirmEvent}
         deleteEvent={deleteEvent}
+        newEventIds={newEventIds}  // הוסף את ה־newEventIds
       />
-      <MapSection userLocation={userLocation} events={events} />
+      <MapSection userLocation={userLocation} events={events} newEventIds={newEventIds} />
     </div>
   );
 }

@@ -1,11 +1,30 @@
-export default function EventCard({ event, userLocation, getDistance, getTextColorByDistance, getBackgroundClass, getTimeLabel, confirmEvent, deleteEvent }) {
+export default function EventCard({
+  event,
+  userLocation,
+  getDistance,
+  getTextColorByDistance,
+  getBackgroundClass,
+  getTimeLabel,
+  confirmEvent,
+  deleteEvent,
+  isNew // הוספנו את הפרופ של isNew
+}) {
   const dist = userLocation && event.lat && event.lng
     ? getDistance(userLocation.lat, userLocation.lng, event.lat, event.lng)
     : null;
   const distText = dist < 1000 ? `${Math.round(dist)} מטר` : `${(dist / 1000).toFixed(2)} ק״מ`;
 
   return (
-    <div key={event.title} className={`rounded-xl p-4 shadow ${getBackgroundClass(event)}`}>
+    <div
+      key={event.id || event.title}
+      className={`relative rounded-xl p-4 shadow transition-all duration-500 ${getBackgroundClass(event)} ${isNew ? "border-4 border-blue-500 animate-pulse" : ""}`}
+    >
+      {/* תצוגת "חדש!" אם זהו אירוע חדש */}
+      {isNew && (
+        <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg animate-bounce">
+          חדש!
+        </div>
+      )}
       <h3 className="text-lg font-bold">{event.title}</h3>
       <p>מדווח: {event.reporter}</p>
       <p>סטטוס: {event.confirmed ? "✅ מאושר" : "⏳ ממתין"}</p>
