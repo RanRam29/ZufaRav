@@ -1,7 +1,41 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 
-// אייקונים כמו שכבר התקנו (ירוק/צהוב/אדום)
+// כל האייקונים מאורגנים כאן
+const icons = {
+  user: new L.Icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+    shadowSize: [41, 41],
+  }),
+  arrived: new L.Icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+    shadowSize: [41, 41],
+  }),
+  confirmed: new L.Icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+    shadowSize: [41, 41],
+  }),
+  pending: new L.Icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+    shadowSize: [41, 41],
+  }),
+};
 
 export default function MapSection({ userLocation, events, newEventIds = [] }) {
   console.debug("🗺️ Rendering MapSection...", { userLocation, numberOfEvents: events?.length || 0 });
@@ -27,7 +61,7 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
         <>
           <Marker
             position={[userLocation.lat, userLocation.lng]}
-            icon={userIcon}
+            icon={icons.user}
           >
             <Popup>המיקום שלך</Popup>
           </Marker>
@@ -37,12 +71,11 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
       )}
 
       {events.map((e, i) => {
-        let iconToUse = pendingIcon;
-
+        let iconToUse = icons.pending;
         if (e.arrival_time) {
-          iconToUse = arrivedIcon;
+          iconToUse = icons.arrived;
         } else if (e.confirmed) {
-          iconToUse = confirmedIcon;
+          iconToUse = icons.confirmed;
         }
 
         return (e.lat && e.lng ? (
