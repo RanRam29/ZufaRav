@@ -1,7 +1,10 @@
+// frontend/src/pages/CreateEvent.jsx
+
 import { useState } from "react";
 import axios from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { geocodeAddress, getLocalISOTime, validateForm } from "../utils/utility";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateEvent({ onCreate }) {
@@ -31,23 +34,24 @@ export default function CreateEvent({ onCreate }) {
       return;
     }
 
-    const now = new Date();
-    const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, -1);
-
-    if (!event.title || !event.location) {
-      console.warn("⚠️ Missing required fields: title or location");
+    if (!validateForm(event)) {
       toast.error("יש למלא את כל השדות הנדרשים");
       return;
     }
 
     try {
-      console.debug("🚀 Submitting new event", { ...event, reporter, datetime: localISOTime });
+      const coords = await geocodeAddress(event.location);
+      const localISOTime = getLocalISOTime();
+
+      console.debug("🚀 Submitting new event", { ...event, reporter, datetime: localISOTime, lat: coords.lat, lng: coords.lng });
+
       await axios.post("/events/create", {
         ...event,
         reporter,
-        address: event.location, // ✅ שידור address מתוך location
+        address: event.location,
         datetime: localISOTime,
+        lat: coords.lat,
+        lng: coords.lng,
       });
 
       toast.success("✅ האירוע נוצר בהצלחה!");
@@ -73,6 +77,7 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
+
         <input
           name="location"
           placeholder="כתובת האירוע"
@@ -81,6 +86,7 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
+
         <select
           name="severity"
           className="input"
@@ -92,6 +98,7 @@ export default function CreateEvent({ onCreate }) {
           <option value="MEDIUM">בינונית</option>
           <option value="HIGH">גבוהה</option>
         </select>
+
         <input
           type="number"
           name="people_count"
@@ -103,6 +110,7 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
+
         <button type="submit" className="btn w-full bg-green-600 hover:bg-green-700 text-white">
           צור אירוע
         </button>
