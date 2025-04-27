@@ -84,7 +84,7 @@ def confirm_event(title: str, request: Request, user=Depends(require_roles(["adm
             if cursor.rowcount == 0:
                 raise HTTPException(status_code=404, detail="אירוע לא נמצא")
         conn.commit()
-        return {"msg": f"האירוע '{title}' אושר על ידי {username}"}
+        return {"msg": f"האירוע '{title}' אושר ע"}
     finally:
         conn.close()
 
@@ -114,7 +114,7 @@ def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["ad
             if cursor.rowcount == 0:
                 raise HTTPException(status_code=404, detail="אירוע לא נמצא")
         conn.commit()
-        return {"msg": f"עודכנו {data.new_count} משתתפים לאירוע {data.id}"}
+        return {"msg": f"עודכו {data.new_count} משתתפים לאירוע {data.id}"}
     finally:
         conn.close()
 
@@ -122,28 +122,27 @@ def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["ad
 def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["admin"]))):
     deleted_by = request.headers.get("X-User", "לא ידוע")
     deleted_at = datetime.utcnow()
-    print(f"🗑 DELETE EVENT: id={id} requested by {deleted_by}")
+    print(f"🗵️ DELETE EVENT: id={id} requested by {deleted_by}")
 
     conn = get_db()
     try:
         with conn.cursor() as cursor:
-            # שליפה
             cursor.execute("SELECT * FROM events WHERE id = %s", (id,))
-            original = cursor.fetchone()
-            if not original:
+            row = cursor.fetchone()
+            if not row:
                 raise HTTPException(status_code=404, detail="אירוע לא נמצא")
-            print(f"✅ Event found: {original}")
+            columns = [col[0] for col in cursor.description]
+            event = dict(zip(columns, row))
+            print(f"✅ Event found: {event}")
 
-            # שליפת זמן הגעה
             cursor.execute("""
                 SELECT timestamp FROM tracking
                 WHERE username = %s ORDER BY timestamp DESC LIMIT 1
-            """, (original[3],))
+            """, (event["reporter"],))
             tracking = cursor.fetchone()
             arrival_time = tracking[0] if tracking else None
             print(f"📍 Last arrival_time: {arrival_time}")
 
-            # הכנסת לארכיון
             cursor.execute("""
                 INSERT INTO events_archive (
                     id, title, location, reporter, lat, lng, address, datetime,
@@ -151,22 +150,23 @@ def delete_event_by_id(id: int, request: Request, user=Depends(require_roles(["a
                     deleted_by, deleted_at
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-                original[0], original[1], original[2], original[3],
-                original[4], original[5], original[6], original[7],
-                original[8], original[9], original[10], original[11],
+                event["id"], event["title"], event["location"], event["reporter"],
+                event["lat"], event["lng"], event["address"], event["datetime"],
+                event["confirmed"], event["confirmed_by"], event["confirmed_at"], event["created_at"],
                 arrival_time, deleted_by, deleted_at
             ))
             print("✅ Event archived successfully")
 
-            # מחיקה
             cursor.execute("DELETE FROM events WHERE id = %s", (id,))
             print("✅ Event deleted from active table")
+
         conn.commit()
         return {"msg": f"אירוע {id} נמחק והועבר לארכיון"}
+
     except Exception as e:
         print(f"❌ DELETE EVENT ERROR: {e}")
         conn.rollback()
-        raise HTTPException(status_code=500, detail="שגיאה במחיקת האירוע")
+        raise HTTPException(status_code=500, detail="שגיאה במחיקת אירוע")
     finally:
         conn.close()
 
@@ -184,7 +184,7 @@ def get_archived_events(user=Depends(require_roles(["admin", "hamal"]))):
             rows = cursor.fetchall()
             cols = [c[0] for c in cursor.description]
             result = [dict(zip(cols, row)) for row in rows]
-            print(f"📦 Archived events fetched: {len(result)} events")
+            print(f"📆 Archived events fetched: {len(result)} events")
             return result
     finally:
         conn.close()
