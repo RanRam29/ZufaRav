@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import axios from "../axiosInstance";
 import { toast, ToastContainer } from "react-toastify";
@@ -18,24 +17,39 @@ export default function CreateEvent({ onCreate }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEvent((prev) => ({ ...prev, [name]: value }));
+    console.debug(`✏️ Field changed: ${name} = ${value}`);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const reporter = localStorage.getItem("username");
-    const timestamp = new Date().toISOString();
 
-    if (!event.title || !event.location || !reporter) {
+    if (!reporter) {
+      console.error("❌ No reporter found in localStorage");
+      toast.error("אין משתמש מחובר. התחבר שוב.");
+      navigate("/login");
+      return;
+    }
+
+    // תיקון תאריך לשעה מקומית ללא סטיית UTC
+    const now = new Date();
+    const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, -1);
+
+    if (!event.title || !event.location) {
+      console.warn("⚠️ Missing required fields: title or location");
       toast.error("יש למלא את כל השדות הנדרשים");
       return;
     }
 
     try {
+      console.debug("🚀 Submitting new event", { ...event, reporter, datetime: localISOTime });
+
       await axios.post("/events/create", {
         ...event,
         reporter,
-        datetime: timestamp,
+        datetime: localISOTime,
       });
 
       toast.success("✅ האירוע נוצר בהצלחה!");
@@ -44,7 +58,7 @@ export default function CreateEvent({ onCreate }) {
       }, 1200);
 
     } catch (err) {
-      console.error("שגיאה ביצירת אירוע:", err);
+      console.error("❌ Error creating event:", err);
       toast.error("❌ שגיאה בעת יצירת האירוע");
     }
   };

@@ -1,26 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../axiosInstance';
+import { useNavigate } from "react-router-dom";
 
 export default function ArchivedEvents() {
   const [archived, setArchived] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    console.debug("📦 Mounted ArchivedEvents page");
     fetchArchived();
   }, []);
 
   const fetchArchived = async () => {
     try {
+      console.debug("📡 Fetching archived events...");
       const res = await axios.get('/events/archive');
       setArchived(res.data);
+      console.debug(`✅ Fetched ${res.data.length} archived events`);
     } catch (err) {
+      console.error("❌ Error fetching archived events:", err);
       alert('שגיאה בטעינת הארכיון');
-      console.error(err);
     }
+  };
+
+  const handleBackToDashboard = () => {
+    console.debug("🔙 Navigating back to dashboard");
+    navigate("/dashboard");
   };
 
   return (
     <div className="p-6 text-right">
-      <h2 className="text-2xl font-bold mb-4">📁 ארכיון אירועים שנמחקו</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">📁 ארכיון אירועים שנמחקו</h2>
+        <button
+          onClick={handleBackToDashboard}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
+        >
+          חזרה לדשבורד
+        </button>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border rounded-xl">
           <thead className="bg-gray-200">
