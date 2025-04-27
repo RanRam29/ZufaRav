@@ -24,7 +24,6 @@ export default function CreateEvent({ onCreate }) {
     e.preventDefault();
 
     const reporter = localStorage.getItem("username");
-
     if (!reporter) {
       console.error("❌ No reporter found in localStorage");
       toast.error("אין משתמש מחובר. התחבר שוב.");
@@ -32,7 +31,6 @@ export default function CreateEvent({ onCreate }) {
       return;
     }
 
-    // תיקון תאריך לשעה מקומית ללא סטיית UTC
     const now = new Date();
     const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
     const localISOTime = new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, -1);
@@ -45,10 +43,10 @@ export default function CreateEvent({ onCreate }) {
 
     try {
       console.debug("🚀 Submitting new event", { ...event, reporter, datetime: localISOTime });
-
       await axios.post("/events/create", {
         ...event,
         reporter,
+        address: event.location, // ✅ שידור address מתוך location
         datetime: localISOTime,
       });
 
@@ -56,7 +54,6 @@ export default function CreateEvent({ onCreate }) {
       setTimeout(() => {
         navigate("/dashboard");
       }, 1200);
-
     } catch (err) {
       console.error("❌ Error creating event:", err);
       toast.error("❌ שגיאה בעת יצירת האירוע");
@@ -76,7 +73,6 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
-
         <input
           name="location"
           placeholder="כתובת האירוע"
@@ -85,7 +81,6 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
-
         <select
           name="severity"
           className="input"
@@ -97,7 +92,6 @@ export default function CreateEvent({ onCreate }) {
           <option value="MEDIUM">בינונית</option>
           <option value="HIGH">גבוהה</option>
         </select>
-
         <input
           type="number"
           name="people_count"
@@ -109,7 +103,6 @@ export default function CreateEvent({ onCreate }) {
           onChange={handleChange}
           required
         />
-
         <button type="submit" className="btn w-full bg-green-600 hover:bg-green-700 text-white">
           צור אירוע
         </button>

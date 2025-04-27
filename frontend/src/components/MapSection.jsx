@@ -1,45 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 
-// אייקון ירוק - משתמש הגיע
-const arrivedIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
-  shadowSize: [41, 41],
-});
-
-// אייקון צהוב - מאושר
-const confirmedIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
-  shadowSize: [41, 41],
-});
-
-// אייקון אדום - ממתין
-const pendingIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
-  shadowSize: [41, 41],
-});
-
-// אייקון סיכה ירוקה למיקום המשתמש
-const userIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
-  shadowSize: [41, 41],
-});
+// אייקונים כמו שכבר התקנו (ירוק/צהוב/אדום)
 
 export default function MapSection({ userLocation, events, newEventIds = [] }) {
   console.debug("🗺️ Rendering MapSection...", { userLocation, numberOfEvents: events?.length || 0 });
@@ -75,12 +37,12 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
       )}
 
       {events.map((e, i) => {
-        let iconToUse = pendingIcon; // ברירת מחדל - אדום
+        let iconToUse = pendingIcon;
 
         if (e.arrival_time) {
-          iconToUse = arrivedIcon; // משתמש הגיע -> ירוק
+          iconToUse = arrivedIcon;
         } else if (e.confirmed) {
-          iconToUse = confirmedIcon; // מאושר -> צהוב
+          iconToUse = confirmedIcon;
         }
 
         return (e.lat && e.lng ? (
