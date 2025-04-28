@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from db import get_db
+from ZufaRav.backend.db.db import get_db
 from routes.auth_utils import require_roles
 from datetime import datetime
 

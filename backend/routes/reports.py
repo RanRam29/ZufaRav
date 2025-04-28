@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from db import get_db
+from ZufaRav.backend.db.db import get_db
 from routes.auth_utils import require_roles
 
 router = APIRouter(prefix="/reports", tags=["reports"])
