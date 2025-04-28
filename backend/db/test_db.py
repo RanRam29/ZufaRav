@@ -1,4 +1,4 @@
-from ZufaRav.backend.db.db import get_db
+from db.db import get_db
 import os
 
 print("Password loaded from env:", os.getenv("POSTGRES_PASSWORD"))  # בדיקה
