@@ -25,7 +25,7 @@ async def broadcast_new_event(event_data):
         try:
             await client.send_json({"type": "new_event", "data": event_data})
         except Exception as e:
-            logger.error("error", f"❌ שגיאה בשליחת הודעה ללקוח: {str(e)}")
+            logger.error(f"❌ שגיאה בשליחת הודעה ללקוח: {str(e)}")
             if client in connected_clients:
                 connected_clients.remove(client)
                 logger.warning("warning", "⚠️ הוסר לקוח עם בעיה מהחיבורים הפעילים")

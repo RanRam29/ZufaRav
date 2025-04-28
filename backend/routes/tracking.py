@@ -34,7 +34,7 @@ def update_location(data: LocationUpdate, user=Depends(require_roles(["admin", "
         return {"msg": "📍 מיקום עודכן בהצלחה"}
 
     except Exception as e:
-        logger.error("error", f"❌ שגיאה בעדכון מיקום: {str(e)}")
+        logger.error(f"❌ שגיאה בעדכון מיקום: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בעדכון מיקום")
 
     finally:
