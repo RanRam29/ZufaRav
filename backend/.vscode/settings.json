@@ -1,0 +1,13 @@
+{
+    "python.pythonPath": "venv/bin/python",
+    "python.analysis.extraPaths": [
+        "./backend"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "black",
+    "python.testing.unittestEnabled": true,
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.defaultInterpreterPath": "venv/bin/python"
+}
