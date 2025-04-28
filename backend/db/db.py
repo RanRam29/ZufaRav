@@ -1,5 +1,3 @@
-# backend/app/db/db.py
-
 from dotenv import load_dotenv
 import psycopg2
 import os
@@ -17,8 +15,8 @@ def get_db():
             host=os.getenv("POSTGRES_HOST"),
             port=os.getenv("POSTGRES_PORT", 5432)
         )
-        logger("debug", "🔌 חיבור למסד נתונים נוצר בהצלחה")
+        logger.debug("🔌 חיבור למסד נתונים נוצר בהצלחה")
         return conn
     except Exception as e:
-        logger("critical", f"❌ שגיאה ביצירת חיבור למסד נתונים: {str(e)}")
+        logger.critical(f"❌ שגיאה ביצירת חיבור למסד נתונים: {str(e)}")
         raise

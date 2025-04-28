@@ -17,7 +17,7 @@ class LocationUpdate(BaseModel):
 
 @router.post("/update")
 def update_location(data: LocationUpdate, user=Depends(require_roles(["admin", "hamal"]))):
-    logger("info", f"📍 עדכון מיקום של {data.username}")
+    logger.info("info", f"📍 עדכון מיקום של {data.username}")
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -30,11 +30,11 @@ def update_location(data: LocationUpdate, user=Depends(require_roles(["admin", "
         """, (data.username, data.lat, data.lng, timestamp))
 
         conn.commit()
-        logger("info", f"✅ מיקום עודכן בהצלחה: {data.username}")
+        logger.info("info", f"✅ מיקום עודכן בהצלחה: {data.username}")
         return {"msg": "📍 מיקום עודכן בהצלחה"}
 
     except Exception as e:
-        logger("error", f"❌ שגיאה בעדכון מיקום: {str(e)}")
+        logger.error("error", f"❌ שגיאה בעדכון מיקום: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בעדכון מיקום")
 
     finally:
@@ -42,4 +42,4 @@ def update_location(data: LocationUpdate, user=Depends(require_roles(["admin", "
             cursor.close()
         if 'conn' in locals():
             conn.close()
-            logger("debug", "🔌 חיבור למסד נתונים נסגר אחרי עדכון מיקום")
+            logger.debug("debug", "🔌 חיבור למסד נתונים נסגר אחרי עדכון מיקום")

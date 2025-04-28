@@ -9,24 +9,24 @@ from routes.ws import ws_router
 from app.config.logger import logger
 
 def include_routers(app):
-    logger("debug", "🚀 התחלת טעינת כל הראוטרים...")
+    logger.debug("🚀 התחלת טעינת כל הראוטרים...")
 
     app.include_router(auth_router)
-    logger("info", "🔗 ראוטר Auth נטען")
+    logger.info("🔗 ראוטר Auth נטען")
 
     app.include_router(events_router)
-    logger("info", "🔗 ראוטר Events נטען")
+    logger.info("🔗 ראוטר Events נטען")
 
     app.include_router(reports_router)
-    logger("info", "🔗 ראוטר Reports נטען")
+    logger.info("🔗 ראוטר Reports נטען")
 
     app.include_router(tracking_router)
-    logger("info", "🔗 ראוטר Tracking נטען")
+    logger.info("🔗 ראוטר Tracking נטען")
 
     app.include_router(admin_router)
-    logger("info", "🔗 ראוטר Admin נטען")
+    logger.info("🔗 ראוטר Admin נטען")
 
     app.include_router(ws_router)
-    logger("info", "🔗 ראוטר WebSocket נטען")
+    logger.info("🔗 ראוטר WebSocket נטען")
 
-    logger("debug", "✅ סיום טעינת כל הראוטרים")
+    logger.debug("✅ סיום טעינת כל הראוטרים")

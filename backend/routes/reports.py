@@ -9,7 +9,7 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/summary")
 def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"]))):
-    logger("info", "📊 בקשת סיכום אירועים")
+    logger.info("info", "📊 בקשת סיכום אירועים")
     conn = get_db()
     cursor = conn.cursor()
 
@@ -28,7 +28,7 @@ def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"])
     cursor.close()
     conn.close()
 
-    logger("debug", f"✅ סיכום אירועים נשלף בהצלחה - {len(severity_stats)} רמות חומרה")
+    logger.info("debug", f"✅ סיכום אירועים נשלף בהצלחה - {len(severity_stats)} רמות חומרה")
     return {
         "severity_summary": [
             {"severity": row[0], "count": row[1]}

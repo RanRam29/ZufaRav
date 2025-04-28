@@ -1,14 +1,13 @@
-# backend/app/config/logger.py
-
 import logging
+import sys
 
-logger = logging.getLogger("zufarav")
+# הגדרת לוגר בסיסי
+logger = logging.getLogger("ZufaRavLogger")
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(formatter)
+
+logger.addHandler(console_handler)
