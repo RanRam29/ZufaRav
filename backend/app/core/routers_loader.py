@@ -6,7 +6,7 @@ from routes.reports import router as reports_router
 from routes.tracking import router as tracking_router
 from routes.admin_routes import router as admin_router
 from routes.ws import ws_router
-from config.logger import logger
+from app.config.logger import logger
 
 def include_routers(app):
     logger.debug("🔧 DEBUG: מתחיל טעינת ראוטרים...")

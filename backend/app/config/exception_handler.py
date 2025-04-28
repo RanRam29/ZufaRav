@@ -1,7 +1,7 @@
 # backend/app/config/exception_handler.py
 
 from fastapi.responses import JSONResponse
-from config.logger import logger
+from app.config.logger import logger
 
 async def general_exception_handler(request, exc):
     logger.error(f"❌ Unhandled error: {exc}")
