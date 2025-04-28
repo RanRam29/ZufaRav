@@ -6,27 +6,27 @@ from routes.reports import router as reports_router
 from routes.tracking import router as tracking_router
 from routes.admin_routes import router as admin_router
 from routes.ws import ws_router
-from app.config.logger import log
+from app.config.logger import logger
 
 def include_routers(app):
-    log("debug", "🚀 התחלת טעינת כל הראוטרים...")
+    logger("debug", "🚀 התחלת טעינת כל הראוטרים...")
 
     app.include_router(auth_router)
-    log("info", "🔗 ראוטר Auth נטען")
+    logger("info", "🔗 ראוטר Auth נטען")
 
     app.include_router(events_router)
-    log("info", "🔗 ראוטר Events נטען")
+    logger("info", "🔗 ראוטר Events נטען")
 
     app.include_router(reports_router)
-    log("info", "🔗 ראוטר Reports נטען")
+    logger("info", "🔗 ראוטר Reports נטען")
 
     app.include_router(tracking_router)
-    log("info", "🔗 ראוטר Tracking נטען")
+    logger("info", "🔗 ראוטר Tracking נטען")
 
     app.include_router(admin_router)
-    log("info", "🔗 ראוטר Admin נטען")
+    logger("info", "🔗 ראוטר Admin נטען")
 
     app.include_router(ws_router)
-    log("info", "🔗 ראוטר WebSocket נטען")
+    logger("info", "🔗 ראוטר WebSocket נטען")
 
-    log("debug", "✅ סיום טעינת כל הראוטרים")
+    logger("debug", "✅ סיום טעינת כל הראוטרים")

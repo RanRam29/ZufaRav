@@ -3,13 +3,13 @@
 from fastapi import APIRouter, Depends
 from db.db import get_db
 from routes.auth_utils import require_roles
-from app.config.logger import log
+from app.config.logger import logger
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/summary")
 def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"]))):
-    log("info", "📊 בקשת סיכום אירועים")
+    logger("info", "📊 בקשת סיכום אירועים")
     conn = get_db()
     cursor = conn.cursor()
 
@@ -28,7 +28,7 @@ def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"])
     cursor.close()
     conn.close()
 
-    log("debug", f"✅ סיכום אירועים נשלף בהצלחה - {len(severity_stats)} רמות חומרה")
+    logger("debug", f"✅ סיכום אירועים נשלף בהצלחה - {len(severity_stats)} רמות חומרה")
     return {
         "severity_summary": [
             {"severity": row[0], "count": row[1]}

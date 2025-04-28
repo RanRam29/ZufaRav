@@ -7,7 +7,7 @@ import jwt
 import bcrypt
 import os
 from dotenv import load_dotenv
-from app.config.logger import log
+from app.config.logger import logger
 
 load_dotenv()
 
@@ -36,15 +36,15 @@ class LoginRequest(BaseModel):
 
 @router.post("/register")
 def register(data: RegisterRequest):
-    log("info", f"📥 בקשת רישום משתמש חדש: {data.username}")
+    logger.info(f"📥 בקשת רישום משתמש חדש: {data.username}")
     try:
         conn = get_db()
-        log("debug", f"📡 חיבור למסד נתונים לצורך רישום: {conn.dsn}")
+        logger.debug(f"📡 חיבור למסד נתונים לצורך רישום: {conn.dsn}")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         if cursor.fetchone():
-            log("warning", f"⚠️ ניסיון לרשום שם משתמש שכבר קיים: {data.username}")
+            logger.warning(f"⚠️ ניסיון לרשום שם משתמש שכבר קיים: {data.username}")
             raise HTTPException(status_code=400, detail="Username already exists")
 
         hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -67,45 +67,45 @@ def register(data: RegisterRequest):
         )
 
         conn.commit()
-        log("info", f"✅ המשתמש '{data.username}' נרשם בהצלחה")
+        logger.info(f"✅ המשתמש '{data.username}' נרשם בהצלחה")
         return {"message": "User registered successfully"}
 
     except Exception as e:
-        log("error", f"❌ שגיאה בתהליך רישום משתמש: {str(e)}")
+        logger.error(f"❌ שגיאה בתהליך רישום משתמש: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal registration error")
 
     finally:
         if 'conn' in locals():
             conn.close()
-            log("debug", "🔌 חיבור למסד נתונים נסגר אחרי רישום")
+            logger.debug("🔌 חיבור למסד נתונים נסגר אחרי רישום")
 
 
 @router.post("/login")
 def login(data: LoginRequest):
-    log("info", f"🔑 ניסיון התחברות משתמש: {data.username}")
+    logger.info(f"🔑 ניסיון התחברות משתמש: {data.username}")
     try:
         conn = get_db()
-        log("debug", "📡 חיבור למסד נתונים לצורך התחברות")
+        logger.debug("📡 חיבור למסד נתונים לצורך התחברות")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         row = cursor.fetchone()
 
         if not row:
-            log("warning", f"⚠️ שם משתמש לא נמצא: {data.username}")
+            logger.warning(f"⚠️ שם משתמש לא נמצא: {data.username}")
             raise HTTPException(status_code=401, detail="User not found")
 
         columns = [desc[0] for desc in cursor.description]
         user = dict(zip(columns, row))
 
         if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
-            log("warning", f"⚠️ סיסמה לא נכונה עבור משתמש: {data.username}")
+            logger.warning(f"⚠️ סיסמה לא נכונה עבור משתמש: {data.username}")
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         payload = {"sub": user["username"], "role": user["role"]}
         token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-        log("info", f"✅ התחברות מוצלחת עבור {data.username}")
+        logger.info(f"✅ התחברות מוצלחת עבור {data.username}")
         return {
             "access_token": token,
             "token_type": "bearer",
@@ -114,10 +114,10 @@ def login(data: LoginRequest):
         }
 
     except Exception as e:
-        log("error", f"❌ שגיאה בתהליך התחברות: {str(e)}")
+        logger.error(f"❌ שגיאה בתהליך התחברות: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal login error")
 
     finally:
         if 'conn' in locals():
             conn.close()
-            log("debug", "🔌 חיבור למסד נתונים נסגר אחרי התחברות")
+            logger.debug("🔌 חיבור למסד נתונים נסגר אחרי התחברות")
