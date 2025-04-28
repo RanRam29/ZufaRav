@@ -1,7 +1,6 @@
-# backend/routes/events_routes.py
-
+# events_routes.py
 from fastapi import APIRouter, Depends, HTTPException, Request
-from ZufaRav.backend.db.db import get_db
+from db.db import get_db
 from routes.auth_utils import require_roles
 from routes.models.events_models import CreateEvent, JoinRequest, UpdatePeopleCount
 from routes.logic.events_logic import (
@@ -30,11 +29,16 @@ def list_events():
     return list_events_logic(conn)
 
 @router.post("/confirm/{title}")
-def confirm_event(title: str, request: Request, user=Depends(require_roles(["admin"]))):
+def confirm_event(
+    title: str,
+    request: Request,
+    user=Depends(require_roles(["admin"]))
+):
     username = request.headers.get("X-User", "לא ידוע")
-    log("info", f"✅ אישור אירוע {title} ע״י {username}")
+    log("info", f"✅ אישור אירוע {title} ע\"י {username}")
     conn = get_db()
     return confirm_event_logic(title, username, conn)
+
 
 @router.post("/join")
 def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"]))):
@@ -60,3 +64,5 @@ def get_archived_events(user=Depends(require_roles(["admin", "hamal"]))):
     log("info", "📂 טעינת ארכיון האירועים")
     conn = get_db()
     return get_archived_events_logic(conn)
+
+# (אין צורך להוסיף שום דבר אחר אחרי זה)

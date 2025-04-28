@@ -1,7 +1,7 @@
 # backend/routes/reports.py
 
 from fastapi import APIRouter, Depends
-from ZufaRav.backend.db.db import get_db
+from db.db import get_db
 from routes.auth_utils import require_roles
 from app.config.logger import log
 

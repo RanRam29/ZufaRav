@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.db.db import get_db
+from db.db import get_db
 import jwt
 import bcrypt
 import os

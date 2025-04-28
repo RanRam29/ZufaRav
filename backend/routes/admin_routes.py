@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from .auth_utils import get_current_user, require_admin
-from app.db.db import get_db
+from db.db import get_db
 from pydantic import BaseModel
 import bcrypt
 from app.config.logger import log
