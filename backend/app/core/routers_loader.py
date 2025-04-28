@@ -6,33 +6,27 @@ from routes.reports import router as reports_router
 from routes.tracking import router as tracking_router
 from routes.admin_routes import router as admin_router
 from routes.ws import ws_router
-from app.config.logger import logger
+from app.config.logger import log
 
 def include_routers(app):
-    logger.debug("🔧 DEBUG: מתחיל טעינת ראוטרים...")
+    log("debug", "🚀 התחלת טעינת כל הראוטרים...")
 
     app.include_router(auth_router)
-    logger.info("🔗 Auth routes loaded.")
-    logger.debug("✅ DEBUG: auth_router loaded.")
+    log("info", "🔗 ראוטר Auth נטען")
 
     app.include_router(events_router)
-    logger.info("🔗 Events routes loaded.")
-    logger.debug("✅ DEBUG: events_router loaded.")
+    log("info", "🔗 ראוטר Events נטען")
 
     app.include_router(reports_router)
-    logger.info("🔗 Reports routes loaded.")
-    logger.debug("✅ DEBUG: reports_router loaded.")
+    log("info", "🔗 ראוטר Reports נטען")
 
     app.include_router(tracking_router)
-    logger.info("🔗 Tracking routes loaded.")
-    logger.debug("✅ DEBUG: tracking_router loaded.")
+    log("info", "🔗 ראוטר Tracking נטען")
 
     app.include_router(admin_router)
-    logger.info("🔗 Admin routes loaded.")
-    logger.debug("✅ DEBUG: admin_router loaded.")
+    log("info", "🔗 ראוטר Admin נטען")
 
     app.include_router(ws_router)
-    logger.info("🔗 WebSocket routes loaded.")
-    logger.debug("✅ DEBUG: ws_router loaded.")
+    log("info", "🔗 ראוטר WebSocket נטען")
 
-    logger.debug("🏁 DEBUG: סיום טעינת כל הראוטרים.")
+    log("debug", "✅ סיום טעינת כל הראוטרים")

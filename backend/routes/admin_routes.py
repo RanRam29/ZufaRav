@@ -1,17 +1,22 @@
+# backend/routes/admin_routes.py
+
 from fastapi import APIRouter, Depends, HTTPException
 from .auth_utils import get_current_user, require_admin
 from app.db.db import get_db
 from pydantic import BaseModel
 import bcrypt
+from app.config.logger import log
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 @router.get("/me")
 def get_my_info(user=Depends(get_current_user)):
+    log("debug", f"👤 מידע עצמי נשלף עבור: {user['sub']}")
     return {"username": user["sub"], "role": user["role"]}
 
 @router.post("/secure-task")
 def only_admin_can_do(user=Depends(require_admin)):
+    log("info", f"🔐 פעולת אדמין בוצעה על ידי: {user['sub']}")
     return {"msg": f"שלום {user['sub']}, הפעולה בוצעה בהצלחה (Admin)"}
 
 class UpdateUserRequest(BaseModel):
@@ -29,11 +34,13 @@ class ResetPasswordRequest(BaseModel):
 
 @router.patch("/update-user")
 def update_user(data: UpdateUserRequest, user=Depends(require_admin)):
+    log("info", f"🛠️ עדכון פרטי משתמש: {data.username}")
     conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
     if not cursor.fetchone():
+        log("warning", f"⚠️ ניסיון לעדכן משתמש לא קיים: {data.username}")
         raise HTTPException(status_code=404, detail="משתמש לא נמצא")
 
     cursor.execute("""
@@ -63,15 +70,18 @@ def update_user(data: UpdateUserRequest, user=Depends(require_admin)):
     conn.commit()
     cursor.close()
     conn.close()
+    log("info", f"✅ המשתמש {data.username} עודכן בהצלחה")
     return {"msg": f"המשתמש '{data.username}' עודכן בהצלחה"}
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, user=Depends(require_admin)):
+    log("info", f"🔒 איפוס סיסמה למשתמש: {data.username}")
     conn = get_db()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
     if not cursor.fetchone():
+        log("warning", f"⚠️ ניסיון לאפס סיסמה למשתמש לא קיים: {data.username}")
         raise HTTPException(status_code=404, detail="משתמש לא נמצא")
 
     hashed = bcrypt.hashpw(data.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -85,10 +95,12 @@ def reset_password(data: ResetPasswordRequest, user=Depends(require_admin)):
     conn.commit()
     cursor.close()
     conn.close()
+    log("info", f"✅ סיסמה עודכנה בהצלחה למשתמש {data.username}")
     return {"msg": f"הסיסמה של המשתמש '{data.username}' עודכנה בהצלחה"}
 
 @router.get("/users")
 def list_all_users(user=Depends(require_admin)):
+    log("info", "📋 שליפת רשימת כל המשתמשים")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -114,11 +126,13 @@ def list_all_users(user=Depends(require_admin)):
 
 @router.get("/users/{username}")
 def get_user(username: str, user=Depends(require_admin)):
+    log("debug", f"👤 שליפת פרטי משתמש: {username}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
     row = cursor.fetchone()
     if not row:
+        log("warning", f"⚠️ ניסיון לגשת למשתמש לא קיים: {username}")
         raise HTTPException(status_code=404, detail="משתמש לא נמצא")
     columns = [desc[0] for desc in cursor.description]
     user_dict = dict(zip(columns, row))
@@ -128,10 +142,12 @@ def get_user(username: str, user=Depends(require_admin)):
 
 @router.delete("/delete-user/{username}")
 def delete_user(username: str, user=Depends(require_admin)):
+    log("warning", f"🗑️ מחיקת משתמש: {username}")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM users WHERE username = %s", (username,))
     if cursor.rowcount == 0:
+        log("warning", f"⚠️ ניסיון למחוק משתמש לא קיים: {username}")
         raise HTTPException(status_code=404, detail="משתמש לא נמצא")
 
     cursor.execute("""
@@ -142,4 +158,5 @@ def delete_user(username: str, user=Depends(require_admin)):
     conn.commit()
     cursor.close()
     conn.close()
+    log("info", f"✅ המשתמש {username} נמחק בהצלחה")
     return {"msg": f"המשתמש '{username}' נמחק בהצלחה"}

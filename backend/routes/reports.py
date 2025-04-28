@@ -1,15 +1,18 @@
+# backend/routes/reports.py
+
 from fastapi import APIRouter, Depends
 from ZufaRav.backend.db.db import get_db
 from routes.auth_utils import require_roles
+from app.config.logger import log
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/summary")
 def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"]))):
+    log("info", "📊 בקשת סיכום אירועים")
     conn = get_db()
     cursor = conn.cursor()
 
-    # דוגמת סיכום: כמה אירועים יש לפי דרגת חומרה
     cursor.execute("""
         SELECT severity, COUNT(*) as count
         FROM events
@@ -17,7 +20,6 @@ def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"])
     """)
     severity_stats = cursor.fetchall()
 
-    # כמה אישורים ניתנו
     cursor.execute("""
         SELECT COUNT(*) FROM event_participants
     """)
@@ -26,6 +28,7 @@ def report_summary(user=Depends(require_roles(["admin", "hamal", "rav", "user"])
     cursor.close()
     conn.close()
 
+    log("debug", f"✅ סיכום אירועים נשלף בהצלחה - {len(severity_stats)} רמות חומרה")
     return {
         "severity_summary": [
             {"severity": row[0], "count": row[1]}
