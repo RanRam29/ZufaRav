@@ -2,49 +2,77 @@
 
 import logging
 import os
+import requests
 from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
 
-# Ensure logs directory exists
+# טעינת משתנים מה-.env
+load_dotenv()
+
+BETTERSTACK_TOKEN = os.getenv("BETTERSTACK_TOKEN")
+BETTERSTACK_SOURCE = os.getenv("BETTERSTACK_SOURCE")
+BETTERSTACK_HOST = os.getenv("BETTERSTACK_HOST")
+
+# יצירת תיקיית לוגים לוקאלית (אם לא קיימת)
 os.makedirs("logs", exist_ok=True)
 
 logger = logging.getLogger("zufarav")
 logger.setLevel(logging.DEBUG)
 
-# Formatter
+# פורמט בסיסי
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
-# Console handler (לדפדפן או למסך)
+# 📋 Console Handler
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(formatter)
 
-# File handler - All logs (info+debug+warning+error+critical)
-file_handler_all = RotatingFileHandler(
+# 📋 File Handler (לשמירה מקומית)
+file_handler = RotatingFileHandler(
     "logs/zufarav.log",
     maxBytes=5 * 1024 * 1024,
     backupCount=3,
     encoding="utf-8"
 )
-file_handler_all.setLevel(logging.DEBUG)
-file_handler_all.setFormatter(formatter)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
 
-# File handler - Only errors
-file_handler_errors = RotatingFileHandler(
-    "logs/error.log",
-    maxBytes=2 * 1024 * 1024,
-    backupCount=5,
-    encoding="utf-8"
-)
-file_handler_errors.setLevel(logging.ERROR)
-file_handler_errors.setFormatter(formatter)
+# 📡 BetterStack Cloud Handler
+class BetterStackHandler(logging.Handler):
+    def emit(self, record):
+        if not (BETTERSTACK_TOKEN and BETTERSTACK_SOURCE and BETTERSTACK_HOST):
+            return  # אם אין משתנים מהסביבה, לא לשלוח
+        log_entry = self.format(record)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {BETTERSTACK_TOKEN}",
+        }
+        payload = {
+            "source": BETTERSTACK_SOURCE,
+            "message": log_entry
+        }
+        try:
+            requests.post(
+                f"https://{BETTERSTACK_HOST}/",
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+        except Exception as e:
+            print(f"❌ Failed to send log to BetterStack: {e}")
 
-# הוספת Handlers פעם אחת בלבד
+# יצירת Cloud Handler
+cloud_handler = BetterStackHandler()
+cloud_handler.setLevel(logging.INFO)
+cloud_handler.setFormatter(formatter)
+
+# 🎯 חיבור כל ה-Handlers ללוגר
 if not logger.handlers:
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler_all)
-    logger.addHandler(file_handler_errors)
+    logger.addHandler(file_handler)
+    logger.addHandler(cloud_handler)
 
-# פונקציה חכמה לשימוש פשוט בלוגים
+# פונקציה חכמה ללוגים
 def log(level: str, message: str):
     """פונקציה חכמה ללוגים לפי רמת חומרה."""
     level = level.lower()
@@ -59,4 +87,4 @@ def log(level: str, message: str):
     elif level == "critical":
         logger.critical(message)
     else:
-        logger.info(message)  # ברירת מחדל אם לא נבחרה רמה נכונה
+        logger.info(message)  # ברירת מחדל
