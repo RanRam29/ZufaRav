@@ -1,10 +1,6 @@
-from dotenv import load_dotenv
 import psycopg2
 import os
 from app.config.logger import logger
-
-# טעינת משתני סביבה
-load_dotenv(dotenv_path=".env")
 
 def get_db():
     try:
@@ -13,7 +9,8 @@ def get_db():
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT", 5432)
+            port=os.getenv("POSTGRES_PORT", 5432),
+            sslmode="require"  # חשוב מאוד ב-Render כדי להתחבר עם SSL
         )
         logger.debug("🔌 חיבור למסד נתונים נוצר בהצלחה")
         return conn
