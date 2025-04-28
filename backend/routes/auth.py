@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from ZufaRav.backend.db.db import get_db
+from app.db.db import get_db
 import jwt
 import bcrypt
 import os

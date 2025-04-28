@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from .auth_utils import get_current_user, require_admin
-from ZufaRav.backend.db.db import get_db
+from app.db.db import get_db
 from pydantic import BaseModel
 import bcrypt
 
