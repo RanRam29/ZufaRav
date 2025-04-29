@@ -97,7 +97,9 @@ def login(data: LoginRequest):
             logger.warning(f"⚠️ שם משתמש לא נמצא: {data.username}")
             raise HTTPException(status_code=401, detail="User not found")
 
+        # ✅ לוג חשוב לבדיקת עמודות
         columns = [desc[0] for desc in cursor.description]
+        logger.debug(f"🧩 עמודות מה-DB: {columns}")
         user = dict(zip(columns, row))
 
         if not user.get("password"):
