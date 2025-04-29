@@ -100,6 +100,12 @@ def login(data: LoginRequest):
         columns = [desc[0] for desc in cursor.description]
         user = dict(zip(columns, row))
 
+        if not user.get("password"):
+            logger.critical(f"❌ סיסמה חסרה למשתמש: {data.username}")
+            raise HTTPException(status_code=500, detail="Missing password in database")
+
+        logger.debug(f"🔍 השוואת סיסמה: קלט = {data.password} | מוצפן = {user['password']}")
+
         if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
             logger.warning(f"⚠️ סיסמה לא נכונה עבור משתמש: {data.username}")
             raise HTTPException(status_code=401, detail="Invalid credentials")
