@@ -61,3 +61,19 @@ def create_event_logic(event, conn):
         conn.rollback()
         logger.error(f"❌ שגיאה כללית ביצירת אירוע '{event.title}': {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה ביצירת אירוע")
+
+# טעינת אירועים
+
+def list_events_logic(conn):
+    logger.debug("🔧 טעינת רשימת אירועים")
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM events ORDER BY created_at DESC")
+            rows = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            events = [dict(zip(columns, row)) for row in rows]
+        logger.info(f"✅ נטענו {len(events)} אירועים מהרשימה")
+        return events
+    except Exception as e:
+        logger.error(f"❌ שגיאה בטעינת רשימת אירועים: {str(e)}")
+        raise HTTPException(status_code=500, detail="שגיאה בטעינת רשימת אירועים")
