@@ -22,7 +22,11 @@ def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal
     logger.info(f"📥 בקשת יצירת אירוע: {event.title}")
     conn = get_db()
     try:
+        logger.debug(f"📦 תוכן האירוע שהתקבל: {event}")
         return create_event_logic(event, conn)
+    except Exception as e:
+        logger.critical(f"❌ שגיאה לא צפויה ביצירת אירוע: {str(e)}")
+        raise HTTPException(status_code=500, detail="שגיאה ביצירת האירוע")
     finally:
         conn.close()
 
