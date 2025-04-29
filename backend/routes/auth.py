@@ -37,9 +37,9 @@ class LoginRequest(BaseModel):
 @router.post("/register")
 def register(data: RegisterRequest):
     logger.info(f"📥 בקשת רישום משתמש חדש: {data.username}")
+    conn = get_db()
     try:
-        conn = get_db()
-        logger.debug(f"📡 חיבור למסד נתונים לצורך רישום: {conn.dsn}")
+        logger.debug("🛁 חיבור למסד נתונים לצורך רישום")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
@@ -75,6 +75,8 @@ def register(data: RegisterRequest):
         raise HTTPException(status_code=500, detail="Internal registration error")
 
     finally:
+        if 'cursor' in locals():
+            cursor.close()
         if 'conn' in locals():
             conn.close()
             logger.debug("🔌 חיבור למסד נתונים נסגר אחרי רישום")
@@ -83,9 +85,9 @@ def register(data: RegisterRequest):
 @router.post("/login")
 def login(data: LoginRequest):
     logger.info(f"🔑 ניסיון התחברות משתמש: {data.username}")
+    conn = get_db()
     try:
-        conn = get_db()
-        logger.debug("📡 חיבור למסד נתונים לצורך התחברות")
+        logger.debug("🛁 חיבור למסד נתונים לצורך התחברות")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
@@ -118,6 +120,8 @@ def login(data: LoginRequest):
         raise HTTPException(status_code=500, detail="Internal login error")
 
     finally:
+        if 'cursor' in locals():
+            cursor.close()
         if 'conn' in locals():
             conn.close()
             logger.debug("🔌 חיבור למסד נתונים נסגר אחרי התחברות")
