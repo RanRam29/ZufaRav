@@ -12,11 +12,24 @@ def get_db():
     retries = 0
     while retries < MAX_RETRIES:
         try:
-            logger.debug("📅 מנסה להתחבר למסד הנתונים...")
-            conn = psycopg2.connect(
-                dsn=os.getenv("DATABASE_URL"),
-                cursor_factory=RealDictCursor
-            )
+            logger.debug("📅 DEBUG: מנסה להתחבר למסד הנתונים...")
+
+            db_url = os.getenv("DATABASE_URL")
+            if db_url:
+                logger.info("🌐 מנסה להתחבר עם DATABASE_URL")
+                conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+            else:
+                logger.info("🔧 מנסה להתחבר עם משתנים בודדים")
+                conn = psycopg2.connect(
+                    host=os.getenv("POSTGRES_HOST"),
+                    database=os.getenv("POSTGRES_DB"),
+                    user=os.getenv("POSTGRES_USER"),
+                    password=os.getenv("POSTGRES_PASSWORD"),
+                    port=os.getenv("POSTGRES_PORT", 5432),
+                    sslmode="require",
+                    cursor_factory=RealDictCursor
+                )
+
             logger.info("📊 התחברות למסד הנתונים הצליחה.")
             return conn
 
