@@ -10,17 +10,17 @@ connected_clients = []
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connected_clients.append(websocket)
-    logger.info(f"🔗 לקוח התחבר לוובסוקט (סה\u201dכ {len(connected_clients)} מחוברים)")
+    logger.info(f"🔗 לקוח התחבר לוובסוקט (סה""כ {len(connected_clients)} מחוברים)")
 
     try:
         while True:
             await websocket.receive_text()  # שומר את החיבור פתוח
     except WebSocketDisconnect:
         connected_clients.remove(websocket)
-        logger.warning(f"🔌 לקוח התנתק מוובסוקט (סה\u201dכ {len(connected_clients)} מחוברים)")
+        logger.warning(f"🔌 לקוח התנתק מוובסוקט (סה""כ {len(connected_clients)} מחוברים)")
 
 async def broadcast_new_event(event_data):
-    logger.debug(f"🛁 שידור אירוע חדש לכל הלקוחות: {event_data.get('title', 'ללא כותרת')}")
+    logger.debug(f"📡 שידור אירוע חדש לכל הלקוחות: {event_data.get('title', 'ללא כותרת')}")
     for client in connected_clients:
         try:
             await client.send_json({"type": "new_event", "data": event_data})

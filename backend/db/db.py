@@ -15,7 +15,7 @@ def get_db():
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             port=os.getenv("POSTGRES_PORT", 5432),
-            sslmode="require"  # 🔥 אין תלות ב־ENV – חובה SSL
+            sslmode="prefer"  # ✅ שינוי חשוב: מאפשר גם חיבור ללא SSL בעת צורך
         )
 
         logger.info(f"📊 INFO: חיבור למסד הנתונים '{os.getenv('POSTGRES_DB')}' הצליח בשרת '{os.getenv('POSTGRES_HOST')}'.")
