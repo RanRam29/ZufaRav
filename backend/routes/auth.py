@@ -1,5 +1,3 @@
-# backend/routes/auth.py
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from db.db import get_db
@@ -46,12 +44,8 @@ def register(data: RegisterRequest):
             logger.warning(f"⚠️ שם משתמש כבר קיים: {data.username}")
             raise HTTPException(status_code=400, detail="Username already exists")
 
-        try:
-            hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-            logger.debug(f"🔐 סיסמה מוצפנת: {hashed_password}")
-        except Exception as e:
-            logger.critical(f"❌ שגיאה בהצפנת סיסמה: {str(e)}")
-            raise HTTPException(status_code=500, detail="Password hashing failed")
+        hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        logger.debug(f"🔐 סיסמה מוצפנת: {hashed_password}")
 
         cursor.execute("""
             INSERT INTO users (username, password, rank, role, id_number, phone_number, full_name, email)
@@ -94,25 +88,27 @@ def login(data: LoginRequest):
         row = cursor.fetchone()
 
         if not row:
-            logger.warning(f"⚠️ משתמש לא נמצא: {data.username}")
+            logger.warning(f"❌ משתמש לא נמצא: {data.username}")
             raise HTTPException(status_code=401, detail="User not found")
 
         columns = [desc[0] for desc in cursor.description]
         user = dict(zip(columns, row))
+        logger.debug(f"🧾 נתוני משתמש: {user}")
 
-        if not user.get("password"):
-            logger.critical(f"❌ סיסמה חסרה ב־DB למשתמש: {data.username}")
-            raise HTTPException(status_code=500, detail="Missing password in DB")
+        password_hash = user.get("password")
+        if not password_hash:
+            logger.critical(f"❌ סיסמה חסרה או ריקה למשתמש: {data.username}")
+            raise HTTPException(status_code=500, detail="Password missing in DB")
 
-        logger.debug(f"🔍 השוואת סיסמה: קלט = {data.password} | שמור = {user['password']}")
+        logger.debug(f"🔍 בודק סיסמה: קלט={data.password}, hash={password_hash}")
 
         try:
-            if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
+            if not bcrypt.checkpw(data.password.encode("utf-8"), password_hash.encode("utf-8")):
                 logger.warning(f"⚠️ סיסמה שגויה עבור: {data.username}")
                 raise HTTPException(status_code=401, detail="Invalid credentials")
-        except ValueError as ve:
-            logger.critical(f"❌ שגיאת salt או hash לא תקין: {ve}")
-            raise HTTPException(status_code=500, detail="Invalid password format in DB")
+        except Exception as e:
+            logger.critical(f"❌ bcrypt נכשל: {str(e)}")
+            raise HTTPException(status_code=500, detail="Password hash check failed")
 
         payload = {"sub": user["username"], "role": user["role"]}
         token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -125,9 +121,11 @@ def login(data: LoginRequest):
             "role": user["role"]
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"❌ שגיאה בתהליך login: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal login error")
+        logger.error(f"❌ שגיאה כללית בלוגין: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
 
     finally:
         if 'cursor' in locals():
