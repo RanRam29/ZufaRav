@@ -1,4 +1,3 @@
-
 import os
 import time
 import psycopg2
@@ -16,6 +15,7 @@ def get_db():
 
             db_url = os.getenv("DATABASE_URL")
             if db_url:
+                logger.info(f"🎯 מחובר ל־DATABASE_URL: {db_url}")  # ✅ הדפסת כתובת למסד
                 logger.info("🌐 מנסה להתחבר עם DATABASE_URL")
                 conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
             else:

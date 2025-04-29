@@ -32,7 +32,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-# --- ROUTES ---
+# --- REGISTER ---
 
 @router.post("/register")
 def register(data: RegisterRequest):
@@ -43,11 +43,15 @@ def register(data: RegisterRequest):
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         if cursor.fetchone():
-            logger.warning(f"⚠️ ניסיון לרשום שם משתמש שכבר קיים: {data.username}")
+            logger.warning(f"⚠️ שם משתמש כבר קיים: {data.username}")
             raise HTTPException(status_code=400, detail="Username already exists")
 
-        # ✅ הצפנת הסיסמה עם bcrypt
-        hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        try:
+            hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            logger.debug(f"🔐 סיסמה מוצפנת: {hashed_password}")
+        except Exception as e:
+            logger.critical(f"❌ שגיאה בהצפנת סיסמה: {str(e)}")
+            raise HTTPException(status_code=500, detail="Password hashing failed")
 
         cursor.execute("""
             INSERT INTO users (username, password, rank, role, id_number, phone_number, full_name, email)
@@ -68,7 +72,7 @@ def register(data: RegisterRequest):
         return {"message": "User registered successfully"}
 
     except Exception as e:
-        logger.error(f"❌ שגיאה בתהליך רישום משתמש: {str(e)}")
+        logger.error(f"❌ שגיאה כללית ברישום: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal registration error")
 
     finally:
@@ -76,45 +80,44 @@ def register(data: RegisterRequest):
             cursor.close()
         if 'conn' in locals():
             conn.close()
-            logger.debug("🔌 חיבור למסד נתונים נסגר אחרי רישום")
+            logger.debug("🔌 חיבור למסד נסגר אחרי רישום")
 
-
+# --- LOGIN ---
 
 @router.post("/login")
 def login(data: LoginRequest):
-    logger.info(f"🔑 ניסיון התחברות משתמש: {data.username}")
+    logger.info(f"🔑 ניסיון התחברות: {data.username}")
     conn = get_db()
     try:
-        logger.debug("🛁 חיבור למסד נתונים לצורך התחברות")
         cursor = conn.cursor()
-
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
         row = cursor.fetchone()
 
         if not row:
-            logger.warning(f"⚠️ שם משתמש לא נמצא: {data.username}")
+            logger.warning(f"⚠️ משתמש לא נמצא: {data.username}")
             raise HTTPException(status_code=401, detail="User not found")
 
-        # ✅ לוג חשוב לבדיקת עמודות
         columns = [desc[0] for desc in cursor.description]
-        logger.debug(f"🧩 עמודות מה-DB: {columns}")
         user = dict(zip(columns, row))
 
         if not user.get("password"):
-            logger.critical(f"❌ סיסמה חסרה למשתמש: {data.username}")
-            raise HTTPException(status_code=500, detail="Missing password in database")
+            logger.critical(f"❌ סיסמה חסרה ב־DB למשתמש: {data.username}")
+            raise HTTPException(status_code=500, detail="Missing password in DB")
 
-        logger.debug(f"🚨🚨🚨 זוהי גרסה מעודכנת של auth.py 🚨🚨🚨")
-        logger.debug(f"🔍 השוואת סיסמה: קלט = {data.password} | מוצפן = {user['password']}")
+        logger.debug(f"🔍 השוואת סיסמה: קלט = {data.password} | שמור = {user['password']}")
 
-        if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
-            logger.warning(f"⚠️ סיסמה לא נכונה עבור משתמש: {data.username}")
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        try:
+            if not bcrypt.checkpw(data.password.encode("utf-8"), user["password"].encode("utf-8")):
+                logger.warning(f"⚠️ סיסמה שגויה עבור: {data.username}")
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+        except ValueError as ve:
+            logger.critical(f"❌ שגיאת salt או hash לא תקין: {ve}")
+            raise HTTPException(status_code=500, detail="Invalid password format in DB")
 
         payload = {"sub": user["username"], "role": user["role"]}
         token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-        logger.info(f"✅ התחברות מוצלחת עבור {data.username}")
+        logger.info(f"✅ התחברות הצליחה עבור {data.username}")
         return {
             "access_token": token,
             "token_type": "bearer",
@@ -123,7 +126,7 @@ def login(data: LoginRequest):
         }
 
     except Exception as e:
-        logger.error(f"❌ שגיאה בתהליך התחברות: {str(e)}")
+        logger.error(f"❌ שגיאה בתהליך login: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal login error")
 
     finally:
@@ -131,4 +134,4 @@ def login(data: LoginRequest):
             cursor.close()
         if 'conn' in locals():
             conn.close()
-            logger.debug("🔌 חיבור למסד נתונים נסגר אחרי התחברות")
+            logger.debug("🔌 חיבור למסד נסגר אחרי login")
