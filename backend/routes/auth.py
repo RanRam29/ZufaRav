@@ -85,14 +85,12 @@ def login(data: LoginRequest):
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
-        row = cursor.fetchone()
+        user = cursor.fetchone()
 
-        if not row:
+        if not user:
             logger.warning(f"❌ משתמש לא נמצא: {data.username}")
             raise HTTPException(status_code=401, detail="User not found")
 
-        columns = [desc[0] for desc in cursor.description]
-        user = dict(zip(columns, row))
         logger.debug(f"🧾 נתוני משתמש: {user}")
 
         password_hash = user.get("password")
