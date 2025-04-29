@@ -39,7 +39,6 @@ def register(data: RegisterRequest):
     logger.info(f"📥 בקשת רישום משתמש חדש: {data.username}")
     conn = get_db()
     try:
-        logger.debug("🛁 חיבור למסד נתונים לצורך רישום")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username = %s", (data.username,))
@@ -47,24 +46,22 @@ def register(data: RegisterRequest):
             logger.warning(f"⚠️ ניסיון לרשום שם משתמש שכבר קיים: {data.username}")
             raise HTTPException(status_code=400, detail="Username already exists")
 
+        # ✅ הצפנת הסיסמה עם bcrypt
         hashed_password = bcrypt.hashpw(data.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-        cursor.execute(
-            """
+        cursor.execute("""
             INSERT INTO users (username, password, rank, role, id_number, phone_number, full_name, email)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                data.username,
-                hashed_password,
-                data.rank,
-                data.role,
-                data.id_number,
-                data.phone_number,
-                data.full_name,
-                data.email
-            ),
-        )
+        """, (
+            data.username,
+            hashed_password,
+            data.rank,
+            data.role,
+            data.id_number,
+            data.phone_number,
+            data.full_name,
+            data.email
+        ))
 
         conn.commit()
         logger.info(f"✅ המשתמש '{data.username}' נרשם בהצלחה")
@@ -80,6 +77,7 @@ def register(data: RegisterRequest):
         if 'conn' in locals():
             conn.close()
             logger.debug("🔌 חיבור למסד נתונים נסגר אחרי רישום")
+
 
 
 @router.post("/login")
