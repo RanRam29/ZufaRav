@@ -60,6 +60,7 @@ export default function CreateEvent({ onCreate }) {
         datetime: localISOTime,
         lat: coords.lat,
         lng: coords.lng,
+        people_count: 0, // ✅ חובה לפי המודל ב־backend
       };
 
       console.debug("🚀 שליחת אירוע חדש לשרת:", eventPayload);
