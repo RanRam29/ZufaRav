@@ -12,7 +12,7 @@ export default function CreateEvent({ onCreate }) {
     title: "",
     location: "",
     severity: "LOW",
-    people_count: 1,
+    people_required: 1,  // 🛠️ שונה מ־people_count ל־people_required
   });
 
   const navigate = useNavigate();
@@ -101,12 +101,12 @@ export default function CreateEvent({ onCreate }) {
 
         <input
           type="number"
-          name="people_count"
+          name="people_required"
           min="1"
           max="99"
           placeholder="כמות רבנים נדרשת"
           className="input"
-          value={event.people_count}
+          value={event.people_required}
           onChange={handleChange}
           required
         />
