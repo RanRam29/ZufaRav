@@ -1,15 +1,10 @@
-# backend/routes/logic/events_logic.py
-
 from fastapi import HTTPException
 from datetime import datetime
 from app.config.logger import logger
 
-# יצירת אירוע
-
 def create_event_logic(event, conn):
     logger.debug(f"🔧 יצירת אירוע חדש: {getattr(event, 'title', '---')}")
     try:
-        # הדפסת נתונים מלאים לבדיקה
         logger.debug(f"📥 נתוני האירוע המתקבלים: {event.__dict__ if hasattr(event, '__dict__') else event}")
 
         required_fields = {
@@ -24,7 +19,7 @@ def create_event_logic(event, conn):
 
         for field, value in required_fields.items():
             if value in [None, ""]:
-                logger.error(f"❌ שדה חובה חסר: {field} (ערך: {value})")
+                logger.exception(f"❌ שדה חובה חסר: {field} (ערך: {value})")
                 raise HTTPException(status_code=400, detail=f"שדה חובה חסר: {field}")
 
         people_required = getattr(event, "people_required", getattr(event, "people_count", 1))
@@ -59,10 +54,8 @@ def create_event_logic(event, conn):
         raise
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה כללית ביצירת אירוע '{getattr(event, 'title', '---')}': {str(e)}")
+        logger.exception(f"❌ שגיאה כללית ביצירת אירוע '{getattr(event, 'title', '---')}': {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה ביצירת אירוע")
-
-# טעינת אירועים
 
 def list_events_logic(conn):
     logger.debug("🔧 טעינת רשימת אירועים")
@@ -75,10 +68,8 @@ def list_events_logic(conn):
         logger.info(f"✅ נטענו {len(events)} אירועים מהרשימה")
         return events
     except Exception as e:
-        logger.error(f"❌ שגיאה בטעינת רשימת אירועים: {str(e)}")
+        logger.exception(f"❌ שגיאה בטעינת רשימת אירועים: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בטעינת רשימת אירועים")
-
-# אישור אירוע
 
 def confirm_event_logic(title, username, conn):
     logger.debug(f"🔧 התחלת אישור אירוע '{title}' על ידי {username}")
@@ -98,10 +89,8 @@ def confirm_event_logic(title, username, conn):
         return {"msg": f"האירוע '{title}' אושר על ידי {username}"}
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה באישור אירוע '{title}': {str(e)}")
+        logger.exception(f"❌ שגיאה באישור אירוע '{title}': {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה באישור אירוע")
-
-# הצטרפות לאירוע
 
 def join_event_logic(event_id, username, conn):
     logger.debug(f"🔧 {username} מצטרף לאירוע ID {event_id}")
@@ -117,10 +106,8 @@ def join_event_logic(event_id, username, conn):
         return {"msg": f"{username} נוסף לאירוע {event_id}"}
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה בהצטרפות {username} לאירוע {event_id}: {str(e)}")
+        logger.exception(f"❌ שגיאה בהצטרפות {username} לאירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בהצטרפות לאירוע")
-
-# עדכון כמות משתתפים באירוע לפי ID
 
 def update_people_count_logic(event_id, new_count, conn):
     logger.debug(f"🔧 עדכון כמות משתתפים לאירוע ID {event_id} ל-{new_count}")
@@ -144,10 +131,8 @@ def update_people_count_logic(event_id, new_count, conn):
 
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה בעדכון כמות משתתפים לאירוע {event_id}: {str(e)}")
+        logger.exception(f"❌ שגיאה בעדכון כמות משתתפים לאירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בעדכון כמות משתתפים")
-
-# מחיקת אירוע והעברה לארכיון
 
 def delete_event_logic(event_id, username, conn):
     logger.debug(f"🔧 התחלת מחיקת אירוע ID {event_id} על ידי {username}")
@@ -182,10 +167,8 @@ def delete_event_logic(event_id, username, conn):
         return {"msg": f"אירוע {event_id} נמחק והועבר לארכיון"}
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה במחיקת אירוע {event_id}: {str(e)}")
+        logger.exception(f"❌ שגיאה במחיקת אירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה במחיקת האירוע")
-
-# טעינת ארכיון
 
 def get_archived_events_logic(conn):
     logger.debug("🔧 טעינת אירועים מארכיון")
@@ -203,5 +186,5 @@ def get_archived_events_logic(conn):
         logger.info(f"✅ נטענו {len(archived)} אירועים מהארכיון")
         return archived
     except Exception as e:
-        logger.error(f"❌ שגיאה בטעינת אירועים מהארכיון: {str(e)}")
+        logger.exception(f"❌ שגיאה בטעינת אירועים מהארכיון: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בטעינת הארכיון")
