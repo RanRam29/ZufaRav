@@ -4,13 +4,14 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.config.logger import logger
 
-from routes.auth_routes import router as auth_router
+# ייבוא הראוטים לפי שמות הקבצים בפועל
+from routes.auth import router as auth_router
 from routes.events_routes import router as events_router
 from routes.admin_routes import router as admin_router
-from routes.geocode_routes import router as geocode_router
-from routes.websocket_routes import router as websocket_router
-from routes.reports_routes import router as reports_router
-from routes.tracking_routes import router as tracking_router
+from routes.geocode_router import router as geocode_router
+from routes.ws import router as websocket_router
+from routes.reports import router as reports_router
+from routes.tracking import router as tracking_router
 
 app = FastAPI()
 
