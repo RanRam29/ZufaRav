@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional
+from datetime import datetime  # ✅ נדרש לשם שינוי טיפוס
 from app.config.logger import logger
 
 
@@ -11,11 +12,11 @@ class CreateEvent(BaseModel):
     reporter: str
     severity: str = "LOW"
     people_required: int = 1
-    datetime: str
+    datetime: datetime  # ✅ היה str – עכשיו datetime
     lat: float = 0.0
     lng: float = 0.0
     people_count: int = 0
-    address: Optional[str] = None  # ✅ הוספנו שדה שחסר
+    address: Optional[str] = None
 
     def model_post_init(self, __context):
         logger.debug(f"📥 CreateEvent INIT: {self.model_dump()}")
