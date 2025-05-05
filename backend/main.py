@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -24,10 +24,16 @@ app.add_middleware(
 logger.info(f"✅ CORS middleware loaded with origins: {origins}")
 
 # ✨ Endpoint בסיסי לבדיקה
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     logger.debug("📡 DEBUG: Root endpoint '/' called.")
     return JSONResponse(content={"status": "✅ ZufaRav backend is running"})
+
+# ✅ תמיכה ב-HEAD / למוניטורינג (UptimeRobot, Render וכו')
+@app.head("/", include_in_schema=False)
+async def root_head():
+    logger.debug("📡 HEAD request received on '/'")
+    return Response(status_code=200)
 
 # 🔗 טעינת ראוטרים
 try:
