@@ -1,12 +1,18 @@
 export async function geocodeAddress(address) {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
+      {
+        headers: {
+          "User-Agent": "ZufaRavApp/1.0 (+https://zufa-rav.vercel.app)",
+        },
+      }
     );
     const data = await response.json();
-    if (data.length === 0 || !data[0].lat || !data[0].lon) {
+
+    if (!Array.isArray(data) || data.length === 0) {
       console.warn("⚠️ No coordinates found for address:", address);
-      throw new Error("לא נמצאו קואורדינטות עבור הכתובת");
+      return null;
     }
 
     return {
@@ -15,7 +21,7 @@ export async function geocodeAddress(address) {
     };
   } catch (error) {
     console.error("❌ Error during geocoding:", error);
-    throw error;
+    return null;
   }
 }
 

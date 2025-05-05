@@ -22,7 +22,7 @@ export default function CreateEvent({ onCreate }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEvent((prev) => ({ ...prev, [name]: value }));
-    console.debug(`✏️ Field changed: ${name} = ${value}`);
+    console.debug(`✏️ שדה שונה: ${name} = ${value}`);
   };
 
   const handleSubmit = async (e) => {
@@ -30,7 +30,7 @@ export default function CreateEvent({ onCreate }) {
 
     const reporter = localStorage.getItem("username");
     if (!reporter) {
-      console.error("❌ No reporter found in localStorage");
+      console.error("❌ אין משתמש מחובר (localStorage)");
       toast.error("אין משתמש מחובר. התחבר שוב.");
       navigate("/login");
       return;
@@ -42,32 +42,36 @@ export default function CreateEvent({ onCreate }) {
     }
 
     try {
+      console.debug("📍 מתחיל תהליך המרת כתובת לקואורדינטות...");
       const coords = await geocodeAddress(event.location);
+
+      if (!coords) {
+        toast.error("⚠️ כתובת לא מזוהה. נסה לנסח אותה אחרת");
+        console.warn("⚠️ קואורדינטות לא אותרו. עצירת התהליך");
+        return;
+      }
+
       const localISOTime = getLocalISOTime();
 
-      console.debug("🚀 Submitting new event", {
-        ...event,
-        reporter,
-        datetime: localISOTime,
-        lat: coords.lat,
-        lng: coords.lng,
-      });
-
-      await axios.post("/events/create", {
+      const eventPayload = {
         ...event,
         reporter,
         address: event.location,
         datetime: localISOTime,
         lat: coords.lat,
         lng: coords.lng,
-      });
+      };
+
+      console.debug("🚀 שליחת אירוע חדש לשרת:", eventPayload);
+
+      await axios.post("/events/create", eventPayload);
 
       toast.success("✅ האירוע נוצר בהצלחה!");
       setTimeout(() => {
         navigate("/dashboard");
       }, 1200);
     } catch (err) {
-      console.error("❌ Error creating event:", err);
+      console.error("❌ שגיאה ביצירת האירוע:", err);
       toast.error("❌ שגיאה בעת יצירת האירוע. ודא שהכתובת תקינה.");
     }
   };

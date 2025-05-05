@@ -1,11 +1,11 @@
-# backend/app/core/routers_loader.py
-
 from routes.auth import router as auth_router
 from routes.events_routes import router as events_router
 from routes.reports import router as reports_router
 from routes.tracking import router as tracking_router
 from routes.admin_routes import router as admin_router
 from routes.ws import ws_router
+from routes.geocode_router import router as geocode_router  # ✅ חדש
+
 from app.config.logger import logger
 
 def include_routers(app):
@@ -28,5 +28,8 @@ def include_routers(app):
 
     app.include_router(ws_router)
     logger.info("🔗 ראוטר WebSocket נטען")
+
+    app.include_router(geocode_router, prefix="/api")
+    logger.info("🔗 ראוטר Geocode נטען עם prefix /api")  # ✅ לוג נוסף
 
     logger.debug("✅ סיום טעינת כל הראוטרים")
