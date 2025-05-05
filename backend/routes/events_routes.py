@@ -20,15 +20,18 @@ router = APIRouter(prefix="/events", tags=["events"])
 @router.post("/create")
 def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal"]))):
     logger.info(f"📥 בקשת יצירת אירוע: {event.title}")
-    conn = get_db()
     try:
         logger.debug(f"📦 תוכן האירוע שהתקבל: {event}")
+        conn = get_db()
         return create_event_logic(event, conn)
     except Exception as e:
-        logger.critical(f"❌ שגיאה לא צפויה ביצירת אירוע: {str(e)}")
-        raise HTTPException(status_code=500, detail="שגיאה ביצירת האירוע")
+        logger.critical(f"❌ שגיאה ב־create_event: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"שגיאה ב־create_event: {str(e)}")
     finally:
-        conn.close()
+        try:
+            conn.close()
+        except:
+            logger.warning("⚠️ ניסיון לסגור connection שנכשל")
 
 @router.get("/list")
 def list_events():
