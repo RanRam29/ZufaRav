@@ -7,9 +7,11 @@ from app.config.logger import logger
 # יצירת אירוע
 
 def create_event_logic(event, conn):
-    logger.debug(f"🔧 יצירת אירוע חדש: {event.title}")
+    logger.debug(f"🔧 יצירת אירוע חדש: {getattr(event, 'title', '---')}")
     try:
-        # ולידציה מקדימה
+        # הדפסת נתונים מלאים לבדיקה
+        logger.debug(f"📥 נתוני האירוע המתקבלים: {event.__dict__ if hasattr(event, '__dict__') else event}")
+
         required_fields = {
             "title": event.title,
             "location": event.location,
@@ -22,7 +24,7 @@ def create_event_logic(event, conn):
 
         for field, value in required_fields.items():
             if value in [None, ""]:
-                logger.error(f"❌ שדה חובה חסר: {field}")
+                logger.error(f"❌ שדה חובה חסר: {field} (ערך: {value})")
                 raise HTTPException(status_code=400, detail=f"שדה חובה חסר: {field}")
 
         people_required = getattr(event, "people_required", getattr(event, "people_count", 1))
@@ -57,7 +59,7 @@ def create_event_logic(event, conn):
         raise
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ שגיאה כללית ביצירת אירוע '{event.title}': {str(e)}")
+        logger.error(f"❌ שגיאה כללית ביצירת אירוע '{getattr(event, 'title', '---')}': {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה ביצירת אירוע")
 
 # טעינת אירועים
@@ -118,7 +120,6 @@ def join_event_logic(event_id, username, conn):
         logger.error(f"❌ שגיאה בהצטרפות {username} לאירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בהצטרפות לאירוע")
 
-
 # עדכון כמות משתתפים באירוע לפי ID
 
 def update_people_count_logic(event_id, new_count, conn):
@@ -145,7 +146,6 @@ def update_people_count_logic(event_id, new_count, conn):
         conn.rollback()
         logger.error(f"❌ שגיאה בעדכון כמות משתתפים לאירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בעדכון כמות משתתפים")
-
 
 # מחיקת אירוע והעברה לארכיון
 
