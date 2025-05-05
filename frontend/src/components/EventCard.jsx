@@ -1,5 +1,4 @@
-import { FaTrashAlt } from "react-icons/fa";
-import { FaCheckSquare } from "react-icons/fa";
+import { FaTrashAlt, FaCheckSquare } from "react-icons/fa";
 
 export default function EventCard({
   event,
@@ -12,15 +11,21 @@ export default function EventCard({
   confirmEvent,
   deleteEvent
 }) {
-  if (!event || !event.lat || !event.lng || !event.title) {
+  if (
+    !event ||
+    typeof event.lat !== "number" ||
+    typeof event.lng !== "number" ||
+    !event.title
+  ) {
+    console.warn("⛔ אירוע לא תקין - לא יוצג:", event);
     return null;
   }
 
   const distance = getDistance(userLocation, event);
-  const textColor = getTextColorByDistance(distance);
+  const peopleCount = typeof event.people_count === "number" ? event.people_count : 0;
   const backgroundClass = getBackgroundClass(event);
+  const textColor = getTextColorByDistance(distance);
   const timeLabel = getTimeLabel(event.datetime);
-  const peopleCount = event.people_count ?? 0;
 
   return (
     <div
@@ -29,8 +34,9 @@ export default function EventCard({
       } ${backgroundClass}`}
     >
       <h2 className="text-xl font-bold mb-2">{event.title}</h2>
-      <p>כתובת: {event.address}</p>
-      <p>מדווח: {event.reporter}</p>
+      <p>כתובת: {event.address || "ללא כתובת"}</p>
+      <p>מדווח: {event.reporter || "לא ידוע"}</p>
+
       <p>
         סטטוס:
         {event.confirmed ? (
@@ -38,15 +44,18 @@ export default function EventCard({
         ) : (
           <button
             onClick={() => confirmEvent(event.id)}
-            className="text-blue-600 font-bold"
+            className="text-blue-600 font-bold ml-1"
           >
             אשר <FaCheckSquare className="inline" />
           </button>
         )}
       </p>
-      <p>בהמתנה: {timeLabel}</p>
-      <p>📍 מרחק: <span className={textColor}>{distance} ק״מ</span></p>
-      <p>משתתפים: {peopleCount}</p>
+
+      <p>⏱ זמן: {timeLabel}</p>
+      <p>
+        📍 מרחק: <span className={textColor}>{distance} ק״מ</span>
+      </p>
+      <p>👥 משתתפים: {peopleCount}</p>
 
       <button
         className="bg-red-500 text-white px-4 py-1 mt-3 rounded hover:bg-red-600 transition"
