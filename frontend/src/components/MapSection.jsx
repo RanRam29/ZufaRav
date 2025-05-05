@@ -39,8 +39,8 @@ const icons = {
 export default function MapSection({ userLocation, events, newEventIds = [] }) {
   console.debug("🗺️ Rendering MapSection...", { userLocation, numberOfEvents: events?.length || 0 });
 
-  if (!events) {
-    console.error("❌ No events data provided to MapSection!");
+  if (!events || !Array.isArray(events)) {
+    console.error("❌ No valid events data provided to MapSection!");
     return <p className="text-center text-red-600">שגיאה בטעינת המפה</p>;
   }
 
@@ -58,14 +58,10 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
 
       {userLocation && (
         <>
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={icons.user}
-          >
+          <Marker position={[userLocation.lat, userLocation.lng]} icon={icons.user}>
             <Popup>המיקום שלך</Popup>
           </Marker>
           <Circle center={[userLocation.lat, userLocation.lng]} radius={100} pathOptions={{ color: 'blue' }} />
-          {console.debug("📍 User location rendered:", userLocation)}
         </>
       )}
 
@@ -76,7 +72,7 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
           isNaN(e.lat) ||
           isNaN(e.lng)
         ) {
-          console.warn(`⚠️ אירוע עם מיקום לא תקני (lat/lng):`, e);
+          console.warn(`⚠️ אירוע עם lat/lng לא תקני - מדלג`, e);
           return null;
         }
 
