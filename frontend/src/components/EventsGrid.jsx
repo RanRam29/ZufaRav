@@ -9,29 +9,31 @@ export default function EventsGrid({
   getTimeLabel,
   confirmEvent,
   deleteEvent,
-  newEventIds = []
 }) {
-  if (!Array.isArray(events)) {
-    console.error("❌ EventsGrid קיבל events לא תקני:", events);
-    return null;
-  }
+  if (!Array.isArray(events)) return <p>אין אירועים להצגה.</p>;
 
-  const filtered = events.filter(
-    (e) =>
-      e &&
-      typeof e.lat === "number" &&
-      typeof e.lng === "number" &&
-      !isNaN(e.lat) &&
-      !isNaN(e.lng)
-  );
+  const validEvents = events.filter((event) => {
+    const isValid =
+      event &&
+      typeof event.lat === "number" &&
+      typeof event.lng === "number" &&
+      typeof event.title === "string";
+
+    if (!isValid) {
+      console.warn("⚠️ אירוע עם lat/lng לא תקינים סונן:", event);
+    }
+
+    return isValid;
+  });
+
+  if (validEvents.length === 0) return <p>לא נמצאו אירועים תקינים.</p>;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      {filtered.map((event) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+      {validEvents.map((event) => (
         <EventCard
-          key={event.id || event.title}
+          key={event.id}
           event={event}
-          isNew={newEventIds.includes(event.id)}
           userLocation={userLocation}
           getDistance={getDistance}
           getTextColorByDistance={getTextColorByDistance}
