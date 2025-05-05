@@ -1,7 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 
-// כל האייקונים מאורגנים כאן
 const icons = {
   user: new L.Icon({
     iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
@@ -71,6 +70,16 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
       )}
 
       {events.map((e, i) => {
+        if (
+          typeof e.lat !== "number" ||
+          typeof e.lng !== "number" ||
+          isNaN(e.lat) ||
+          isNaN(e.lng)
+        ) {
+          console.warn(`⚠️ אירוע עם מיקום לא תקני (lat/lng):`, e);
+          return null;
+        }
+
         let iconToUse = icons.pending;
         if (e.arrival_time) {
           iconToUse = icons.arrived;
@@ -78,7 +87,7 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
           iconToUse = icons.confirmed;
         }
 
-        return (e.lat && e.lng ? (
+        return (
           <Marker key={i} position={[e.lat, e.lng]} icon={iconToUse}>
             <Popup>
               <strong>{e.title}</strong><br />
@@ -87,9 +96,7 @@ export default function MapSection({ userLocation, events, newEventIds = [] }) {
               סטטוס: {e.confirmed ? (e.arrival_time ? '✅ הגיע' : '✅ מאושר') : '⏳ ממתין'}
             </Popup>
           </Marker>
-        ) : (
-          console.warn(`⚠️ Event without valid coordinates:`, e)
-        ));
+        );
       })}
     </MapContainer>
   );
