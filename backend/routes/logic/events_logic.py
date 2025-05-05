@@ -118,6 +118,35 @@ def join_event_logic(event_id, username, conn):
         logger.error(f"❌ שגיאה בהצטרפות {username} לאירוע {event_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה בהצטרפות לאירוע")
 
+
+# עדכון כמות משתתפים באירוע לפי ID
+
+def update_people_count_logic(event_id, new_count, conn):
+    logger.debug(f"🔧 עדכון כמות משתתפים לאירוע ID {event_id} ל-{new_count}")
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE id = %s", (event_id,))
+            event = cursor.fetchone()
+            if not event:
+                logger.warning(f"⚠️ אירוע לא נמצא: ID {event_id}")
+                raise HTTPException(status_code=404, detail="אירוע לא נמצא")
+
+            cursor.execute("""
+                UPDATE events
+                SET people_count = %s
+                WHERE id = %s
+            """, (new_count, event_id))
+
+        conn.commit()
+        logger.info(f"✅ עודכנה כמות משתתפים באירוע ID {event_id} ל-{new_count}")
+        return {"msg": f"כמות המשתתפים עודכנה ל-{new_count} עבור האירוע ID {event_id}"}
+
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"❌ שגיאה בעדכון כמות משתתפים לאירוע {event_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="שגיאה בעדכון כמות משתתפים")
+
+
 # מחיקת אירוע והעברה לארכיון
 
 def delete_event_logic(event_id, username, conn):
