@@ -19,10 +19,12 @@ def create_event_logic(event, conn):
 
         for field, value in required_fields.items():
             if value in [None, ""]:
-                logger.exception(f"❌ שדה חובה חסר: {field} (ערך: {value})")
+                logger.error(f"❌ שדה חובה חסר: {field} (ערך: {value})")
                 raise HTTPException(status_code=400, detail=f"שדה חובה חסר: {field}")
 
-        people_required = getattr(event, "people_required", getattr(event, "people_count", 1))
+        people_required = getattr(event, "people_required", 1)
+        people_count = getattr(event, "people_count", 0)  # 👈 זה החלק שהשתנה
+        address = getattr(event, "address", "")
         created_at = datetime.utcnow().isoformat()
 
         with conn.cursor() as cursor:
@@ -30,8 +32,8 @@ def create_event_logic(event, conn):
                 INSERT INTO events (
                     title, location, reporter, severity,
                     people_required, datetime, created_at,
-                    confirmed, lat, lng, people_count
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    confirmed, lat, lng, address, people_count
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 event.title,
                 event.location,
@@ -43,7 +45,8 @@ def create_event_logic(event, conn):
                 False,
                 event.lat,
                 event.lng,
-                0
+                address,
+                people_count  # 👈 הכנסנו את הערך הנכון מה-Frontend
             ))
 
         conn.commit()
@@ -56,6 +59,7 @@ def create_event_logic(event, conn):
         conn.rollback()
         logger.exception(f"❌ שגיאה כללית ביצירת אירוע '{getattr(event, 'title', '---')}': {str(e)}")
         raise HTTPException(status_code=500, detail="שגיאה ביצירת אירוע")
+
 
 def list_events_logic(conn):
     logger.debug("🔧 טעינת רשימת אירועים")
