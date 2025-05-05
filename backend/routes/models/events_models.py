@@ -1,6 +1,6 @@
 # backend/routes/models/events_models.py
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from typing import Optional
 from app.config.logger import logger
 
@@ -15,6 +15,7 @@ class CreateEvent(BaseModel):
     lat: float = 0.0
     lng: float = 0.0
     people_count: int = 0
+    address: Optional[str] = None  # ✅ הוספנו שדה שחסר
 
     def model_post_init(self, __context):
         logger.debug(f"📥 CreateEvent INIT: {self.model_dump()}")
