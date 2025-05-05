@@ -1,77 +1,59 @@
+import { FaTrashAlt } from "react-icons/fa";
+import { FaCheckSquare } from "react-icons/fa";
+
 export default function EventCard({
-  event = {},
+  event,
+  isNew = false,
   userLocation,
   getDistance,
   getTextColorByDistance,
   getBackgroundClass,
   getTimeLabel,
   confirmEvent,
-  deleteEvent,
-  isNew
+  deleteEvent
 }) {
-  const {
-    id,
-    title = "ללא כותרת",
-    address,
-    location,
-    reporter = "לא ידוע",
-    confirmed = false,
-    people_count = 0,
-    datetime,
-    lat,
-    lng
-  } = event;
+  if (!event || !event.lat || !event.lng || !event.title) {
+    return null;
+  }
 
-  const dist =
-    userLocation && lat != null && lng != null
-      ? getDistance(userLocation.lat, userLocation.lng, lat, lng)
-      : null;
-
-  const distText = dist != null
-    ? dist < 1000
-      ? `${Math.round(dist)} מטר`
-      : `${(dist / 1000).toFixed(2)} ק״מ`
-    : null;
-
-  console.debug("🧩 Rendering EventCard", { event });
+  const distance = getDistance(userLocation, event);
+  const textColor = getTextColorByDistance(distance);
+  const backgroundClass = getBackgroundClass(event);
+  const timeLabel = getTimeLabel(event.datetime);
+  const peopleCount = event.people_count ?? 0;
 
   return (
     <div
-      key={id || title}
-      className={`relative rounded-xl p-4 shadow transition-all duration-500 ${getBackgroundClass(event)} ${
-        isNew ? "border-4 border-blue-500 animate-pulse" : ""
-      }`}
+      className={`p-4 rounded-xl shadow-md transition-all border border-gray-300 ${
+        isNew ? "animate-pulse border-green-400" : ""
+      } ${backgroundClass}`}
     >
-      {isNew && (
-        <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl-lg animate-bounce">
-          חדש!
-        </div>
-      )}
-
-      <h3 className="text-lg font-bold">{title}</h3>
-      <p>כתובת: {address || location || "—"}</p>
-      <p>מדווח: {reporter}</p>
-      <p>סטטוס: {confirmed ? "✅ מאושר" : "⏳ ממתין"}</p>
-      <p>בהמתנה: {datetime ? getTimeLabel(datetime) : "—"}</p>
-      <p>משתתפים: {people_count}</p>
-      {distText && <p className={`${getTextColorByDistance(dist)}`}>📍 מרחק: {distText}</p>}
-
-      <div className="flex gap-2 mt-2">
-        {!confirmed && (
+      <h2 className="text-xl font-bold mb-2">{event.title}</h2>
+      <p>כתובת: {event.address}</p>
+      <p>מדווח: {event.reporter}</p>
+      <p>
+        סטטוס:
+        {event.confirmed ? (
+          <span className="text-green-600 font-bold"> מאושר ✅</span>
+        ) : (
           <button
-            onClick={() => confirmEvent(title)}
-            className="bg-purple-600 text-white px-2 rounded"
+            onClick={() => confirmEvent(event.id)}
+            className="text-blue-600 font-bold"
           >
-            מאשר הגעה
+            אשר <FaCheckSquare className="inline" />
           </button>
         )}
-        <button
-          onClick={() => deleteEvent(id)}
-          className="bg-red-500 text-white px-2 rounded"
-        >
-          מחק
-        </button>
-      </div>
+      </p>
+      <p>בהמתנה: {timeLabel}</p>
+      <p>📍 מרחק: <span className={textColor}>{distance} ק״מ</span></p>
+      <p>משתתפים: {peopleCount}</p>
+
+      <button
+        className="bg-red-500 text-white px-4 py-1 mt-3 rounded hover:bg-red-600 transition"
+        onClick={() => deleteEvent(event.id)}
+      >
+        מחק <FaTrashAlt className="inline" />
+      </button>
     </div>
   );
 }
