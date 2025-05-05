@@ -18,20 +18,22 @@ from app.config.logger import logger
 router = APIRouter(prefix="/events", tags=["events"])
 
 @router.post("/create")
-def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal"]))):
-    logger.info(f"📥 בקשת יצירת אירוע: {event.title}")
+def create_event(event: CreateEvent, user=Depends(require_roles(["admin", "hamal"]))) -> dict:
+    logger.info(f"📥 בקשת יצירת אירוע: {getattr(event, 'title', '---')}")
     try:
-        logger.debug(f"📦 תוכן האירוע שהתקבל: {event}")
         conn = get_db()
-        return create_event_logic(event, conn)
+        logger.debug(f"📦 תוכן האירוע שהתקבל: {event.dict()}")
+        result = create_event_logic(event, conn)
+        logger.info(f"✅ אירוע נוצר בהצלחה: {event.title}")
+        return result
     except Exception as e:
         logger.critical(f"❌ שגיאה ב־create_event: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"שגיאה ב־create_event: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"שגיאה ביצירת האירוע: {str(e)}")
     finally:
         try:
             conn.close()
-        except:
-            logger.warning("⚠️ ניסיון לסגור connection שנכשל")
+        except Exception as close_err:
+            logger.warning(f"⚠️ סגירת connection נכשלה: {close_err}")
 
 @router.get("/list")
 def list_events():
@@ -43,7 +45,7 @@ def list_events():
         conn.close()
 
 @router.post("/confirm/{title}")
-def confirm_event(title: str, request: Request, user=Depends(require_roles(["admin"]))):
+def confirm_event(title: str, request: Request, user=Depends(require_roles(["admin"]))) -> dict:
     username = request.headers.get("X-User", "לא ידוע")
     logger.info(f"✅ אישור אירוע {title} ע\"י {username}")
     conn = get_db()
@@ -53,7 +55,7 @@ def confirm_event(title: str, request: Request, user=Depends(require_roles(["adm
         conn.close()
 
 @router.post("/join")
-def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"]))):
+def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"]))) -> dict:
     logger.info(f"➕ הצטרפות של {data.username} לאירוע {data.event_id}")
     conn = get_db()
     try:
@@ -62,7 +64,7 @@ def join_event(data: JoinRequest, user=Depends(require_roles(["admin", "rav"])))
         conn.close()
 
 @router.patch("/update_people_count/by_id")
-def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["admin", "hamal"]))):
+def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["admin", "hamal"]))) -> dict:
     logger.debug(f"🔧 עדכון כמות משתתפים לאירוע {data.id} ל-{data.new_count}")
     conn = get_db()
     try:
@@ -71,7 +73,7 @@ def update_people_count(data: UpdatePeopleCount, user=Depends(require_roles(["ad
         conn.close()
 
 @router.delete("/delete/by_id/{id}")
-def delete_event(id: int, request: Request, user=Depends(require_roles(["admin"]))):
+def delete_event(id: int, request: Request, user=Depends(require_roles(["admin"]))) -> dict:
     username = request.headers.get("X-User", "לא ידוע")
     logger.warning(f"🗑️ מחיקת אירוע ID {id} על ידי {username}")
     conn = get_db()
@@ -81,7 +83,7 @@ def delete_event(id: int, request: Request, user=Depends(require_roles(["admin"]
         conn.close()
 
 @router.get("/archive")
-def get_archived_events(user=Depends(require_roles(["admin", "hamal"]))):
+def get_archived_events(user=Depends(require_roles(["admin", "hamal"]))) -> list:
     logger.info("📂 טעינת ארכיון האירועים")
     conn = get_db()
     try:

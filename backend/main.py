@@ -1,47 +1,68 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-# ✅ קונפיגורציות
+from fastapi.exceptions import RequestValidationError
 from app.config.logger import logger
-from app.config.cors_settings import origins
-from app.config.exception_handler import general_exception_handler
 
-# ✅ טעינת ראוטרים חכמה
-from app.core.routers_loader import include_routers
+from routes.auth_routes import router as auth_router
+from routes.events_routes import router as events_router
+from routes.admin_routes import router as admin_router
+from routes.geocode_routes import router as geocode_router
+from routes.websocket_routes import router as websocket_router
+from routes.reports_routes import router as reports_router
+from routes.tracking_routes import router as tracking_router
 
 app = FastAPI()
 
-# 🎯 קונפיגורציית CORS
+# CORS
+origins = [
+    "https://zufa-rav.vercel.app",
+    "http://localhost:5173",
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
-logger.info(f"✅ CORS middleware loaded with origins: {origins}")
 
-# ✨ Endpoint בסיסי לבדיקה
-@app.get("/", include_in_schema=False)
-async def root():
+# Global validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.critical(f"❌ Validation Error: {exc.errors()} | Body: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": (await request.body()).decode("utf-8")}
+    )
+
+# Routers
+logger.debug("🚀 התחלת טעינת כל הראוטרים...")
+app.include_router(auth_router)
+logger.info("🔗 ראוטר Auth נטען")
+
+app.include_router(events_router)
+logger.info("🔗 ראוטר Events נטען")
+
+app.include_router(reports_router)
+logger.info("🔗 ראוטר Reports נטען")
+
+app.include_router(tracking_router)
+logger.info("🔗 ראוטר Tracking נטען")
+
+app.include_router(admin_router)
+logger.info("🔗 ראוטר Admin נטען")
+
+app.include_router(websocket_router)
+logger.info("🔗 ראוטר WebSocket נטען")
+
+app.include_router(geocode_router, prefix="/api")
+logger.info("🔗 ראוטר Geocode נטען עם prefix /api")
+
+logger.debug("✅ סיום טעינת כל הראוטרים")
+logger.info("✅ All routers loaded successfully.")
+
+@app.get("/")
+def root():
     logger.debug("📡 DEBUG: Root endpoint '/' called.")
-    return JSONResponse(content={"status": "✅ ZufaRav backend is running"})
-
-# ✅ תמיכה ב-HEAD / למוניטורינג (UptimeRobot, Render וכו')
-@app.head("/", include_in_schema=False)
-async def root_head():
-    logger.debug("📡 HEAD request received on '/'")
-    return Response(status_code=200)
-
-# 🔗 טעינת ראוטרים
-try:
-    include_routers(app)
-    logger.info("✅ All routers loaded successfully.")
-except Exception as e:
-    logger.error(f"❌ ERROR: Failed to load routers: {e}")
-    raise
-
-# 🔥 טיפול גלובלי בשגיאות
-app.add_exception_handler(Exception, general_exception_handler)
+    return {"message": "ZufaRav Backend is up and running!"}
