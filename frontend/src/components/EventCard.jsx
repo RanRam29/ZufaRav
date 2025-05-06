@@ -1,68 +1,74 @@
-import { FaTrashAlt, FaCheckSquare } from "react-icons/fa";
+import React from "react";
 
-export default function EventCard({
-  event,
-  isNew = false,
-  userLocation,
-  getDistance,
-  getTextColorByDistance,
-  getBackgroundClass,
-  getTimeLabel,
-  confirmEvent,
-  deleteEvent
-}) {
-  if (
-    !event ||
-    typeof event.lat !== "number" ||
-    typeof event.lng !== "number" ||
-    !event.title
-  ) {
-    console.warn("⛔ אירוע לא תקין - לא יוצג:", event);
+const EventCard = ({ event, onDelete, onConfirm }) => {
+  const {
+    id,
+    title = "ללא כותרת",
+    location = "",
+    reporter = "",
+    severity = "",
+    confirmed = false,
+    confirmed_at,
+    confirmed_by,
+    created_at,
+    address = "",
+    people_count = 0,
+    lat,
+    lng,
+  } = event;
+
+  // המרה והגנה על ערכים
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+  const isValidLatLng = !isNaN(parsedLat) && !isNaN(parsedLng);
+
+  if (!isValidLatLng) {
+    console.warn("⚠️ לא נמצא ערך תקין של lat/lng", event);
     return null;
   }
 
-  const distance = getDistance(userLocation, event);
-  const peopleCount = typeof event.people_count === "number" ? event.people_count : 0;
-  const backgroundClass = getBackgroundClass(event);
-  const textColor = getTextColorByDistance(distance);
-  const timeLabel = getTimeLabel(event.datetime);
-
   return (
-    <div
-      className={`p-4 rounded-xl shadow-md transition-all border border-gray-300 ${
-        isNew ? "animate-pulse border-green-400" : ""
-      } ${backgroundClass}`}
-    >
-      <h2 className="text-xl font-bold mb-2">{event.title}</h2>
-      <p>כתובת: {event.address || "ללא כתובת"}</p>
-      <p>מדווח: {event.reporter || "לא ידוע"}</p>
-
+    <div className="bg-white rounded-2xl shadow p-4 mb-4 border border-gray-300">
+      <h2 className="text-lg font-bold mb-1">{title}</h2>
+      <p>כתובת: {address}</p>
+      <p>מדווח: {reporter}</p>
       <p>
-        סטטוס:
-        {event.confirmed ? (
-          <span className="text-green-600 font-bold"> מאושר ✅</span>
+        סטטוס:{" "}
+        {confirmed ? (
+          <span className="text-green-600 font-bold">מאושר ✅</span>
         ) : (
-          <button
-            onClick={() => confirmEvent(event.id)}
-            className="text-blue-600 font-bold ml-1"
-          >
-            אשר <FaCheckSquare className="inline" />
-          </button>
+          <span className="text-yellow-600 font-bold">ממתין לאישור ⏳</span>
         )}
       </p>
-
-      <p>⏱ זמן: {timeLabel}</p>
+      {confirmed_at && (
+        <p>
+          אושר ע"י {confirmed_by} בתאריך:{" "}
+          {new Date(confirmed_at).toLocaleString("he-IL")}
+        </p>
+      )}
       <p>
-        📍 מרחק: <span className={textColor}>{distance} ק״מ</span>
+        נוצר בתאריך: {new Date(created_at).toLocaleString("he-IL")}
       </p>
-      <p>👥 משתתפים: {peopleCount}</p>
-
-      <button
-        className="bg-red-500 text-white px-4 py-1 mt-3 rounded hover:bg-red-600 transition"
-        onClick={() => deleteEvent(event.id)}
-      >
-        מחק <FaTrashAlt className="inline" />
-      </button>
+      <p>רמת חומרה: {severity}</p>
+      <p>משתתפים: {isNaN(people_count) ? 0 : people_count}</p>
+      <div className="flex justify-end mt-2">
+        {!confirmed && (
+          <button
+            onClick={() => onConfirm(id)}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded ml-2"
+          >
+            אשר
+          </button>
+        )}
+        <button
+          onClick={() => onDelete(id)}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded"
+        >
+          מחק
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default EventCard;
